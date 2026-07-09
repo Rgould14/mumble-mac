@@ -40,4 +40,15 @@ struct AppSettings: Codable, Equatable {
     var onDeviceOnly = false
     var maxSessionMinutes = 20
     var hasCompletedOnboarding = false
+
+    /// Stage-2 LLM cleanup (the Wispr Flow "auto-edits" layer): rewrites the raw
+    /// transcript to fix mis-transcribed words, punctuation, and tone-per-app.
+    /// Falls back to rule-based polishing when off, offline, or no key.
+    var useAICleanup = true
+    /// Claude model for the cleanup pass. Opus 4.8 by default; switch to
+    /// claude-haiku-4-5 for lowest latency.
+    var cleanupModel = "claude-opus-4-8"
+    /// Anthropic API key. If empty, ANTHROPIC_API_KEY from the environment is used.
+    var anthropicAPIKey = ""
+    var adaptToneByApp = true
 }

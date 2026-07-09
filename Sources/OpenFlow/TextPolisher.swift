@@ -6,6 +6,23 @@ import Foundation
 enum TextPolisher {
     static let fillers = ["um", "uh", "uhm", "erm", "hmm", "you know,", "i mean,"]
 
+    /// Applied after any cleanup path (LLM or rule-based): whole-utterance snippet
+    /// expansion and personal-dictionary corrections. Kept lightweight so it
+    /// doesn't undo the LLM's formatting.
+    static func postProcess(_ text: String, state: AppState) -> String {
+        var out = text
+        let lowered = out.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: .punctuationCharacters)
+        if let snip = state.snippets.first(where: { $0.trigger.lowercased() == lowered }) {
+            return snip.expansion
+        }
+        for entry in state.dictionary where !entry.replaces.isEmpty {
+            let pattern = "(?i)\\b" + NSRegularExpression.escapedPattern(for: entry.replaces) + "\\b"
+            out = out.replacingOccurrences(of: pattern, with: entry.word, options: .regularExpression)
+        }
+        return out
+    }
+
     static func polish(_ raw: String, state: AppState) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return text }

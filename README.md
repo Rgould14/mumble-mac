@@ -13,7 +13,16 @@ A native Swift macOS voice-dictation app modeled on [Wispr Flow](https://wisprfl
 
 While dictating, a floating **Flow Bar** pill appears at the bottom-center of the screen with live waveform bars; it switches to a processing spinner while your speech is finalized, then the text is pasted into the app you were in.
 
-Transcription uses Apple's on-device/server Speech framework (no API keys). Text is auto-polished: punctuation and capitalization, filler-word removal (um, uh…), personal-dictionary corrections, and spoken snippet expansion.
+Transcription is a **two-stage pipeline**, mirroring Wispr Flow:
+
+1. **Speech-to-text** — Apple's `SFSpeechRecognizer` produces a raw transcript.
+2. **AI cleanup** — the raw transcript is sent to Claude (Messages API), which rewrites it: fixing mis-transcribed words from context (e.g. "ana Liye zing" → "analysing" — a dictionary can't do this, an LLM reading the sentence can), adding punctuation/capitalization, removing filler, structuring lists, and adapting tone to the app you're dictating into. Falls back to rule-based polishing when disabled, offline, or no key is set.
+
+Personal-dictionary spellings are passed to the model as context, and spoken snippet triggers still expand locally.
+
+### API key
+
+The AI cleanup layer needs an Anthropic API key. Set it per-user in **Flow Hub → Settings → AI cleanup**, or export `ANTHROPIC_API_KEY` in the environment. Choose the model in the same panel — Opus 4.8 (most accurate, default), Haiku 4.5 (fastest), or Sonnet 5 (balanced). Turn AI cleanup off to run fully offline on rule-based polishing only.
 
 ## Flow Hub
 

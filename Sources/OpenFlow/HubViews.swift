@@ -252,7 +252,22 @@ struct SettingsView: View {
                 Stepper("Max session: \(state.settings.maxSessionMinutes) min",
                         value: $state.settings.maxSessionMinutes, in: 1...60)
             }
-            Section("Polish") {
+            Section("AI cleanup") {
+                Toggle("Use AI to clean up transcripts", isOn: $state.settings.useAICleanup)
+                Text("Rewrites raw speech-to-text to fix mis-transcribed words, punctuation, and tone — the way Wispr Flow does. Falls back to rule-based polishing when off or offline.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if state.settings.useAICleanup {
+                    SecureField("Anthropic API key (or set ANTHROPIC_API_KEY)",
+                                text: $state.settings.anthropicAPIKey)
+                    Picker("Model", selection: $state.settings.cleanupModel) {
+                        Text("Claude Opus 4.8 (most accurate)").tag("claude-opus-4-8")
+                        Text("Claude Haiku 4.5 (fastest)").tag("claude-haiku-4-5")
+                        Text("Claude Sonnet 5 (balanced)").tag("claude-sonnet-5")
+                    }
+                    Toggle("Adapt tone to the active app", isOn: $state.settings.adaptToneByApp)
+                }
+            }
+            Section("Polish (fallback / on top of AI)") {
                 Toggle("Remove filler words (um, uh…)", isOn: $state.settings.removeFillerWords)
                 Toggle("Auto-capitalize first word", isOn: $state.settings.autoCapitalize)
             }

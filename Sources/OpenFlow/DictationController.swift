@@ -92,26 +92,35 @@ final class DictationController: ObservableObject {
         let duration = Date().timeIntervalSince(startedAt)
         state = .processing
         if AppState.shared.settings.playSounds { Sounds.play("Tink") }
+        let appName = targetApp?.localizedName ?? "Unknown"
         transcriber.stop { [weak self] raw in
             guard let self else { return }
-            let polished = TextPolisher.polish(raw, state: AppState.shared)
-            defer {
-                self.state = .idle
-                FlowBarPanel.shared.hideSoon()
-            }
-            guard !polished.isEmpty else { return }
-            AppState.shared.history.insert(
-                TranscriptEntry(text: polished,
-                                appName: self.targetApp?.localizedName ?? "Unknown",
-                                date: Date(),
-                                durationSeconds: duration),
-                at: 0)
-            // Re-focus the app the user was dictating into, then paste.
-            self.targetApp?.activate()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                TextInserter.insert(polished)
-            }
+            Task { await self.finish(raw: raw, appName: appName, duration: duration) }
         }
+    }
+
+    /// Runs stage-2 LLM cleanup (async) with a rule-based fallback, records the
+    /// transcript, and pastes it into the target app.
+    private func finish(raw: String, appName: String, duration: Double) async {
+        let text: String
+        do {
+            text = try await LLMCleanup.clean(raw, appName: appName, state: AppState.shared)
+        } catch {
+            text = TextPolisher.polish(raw, state: AppState.shared)
+        }
+        // Snippet expansion + dictionary still apply locally on top of LLM output.
+        let final = TextPolisher.postProcess(text, state: AppState.shared)
+
+        state = .idle
+        FlowBarPanel.shared.hideSoon()
+        guard !final.isEmpty else { return }
+
+        AppState.shared.history.insert(
+            TranscriptEntry(text: final, appName: appName, date: Date(), durationSeconds: duration),
+            at: 0)
+        targetApp?.activate()
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        TextInserter.insert(final)
     }
 
     func cancel() {
