@@ -29,6 +29,14 @@ enum TextInserter {
         }
     }
 
+    /// Put text on the clipboard permanently (no restore) — used when nothing
+    /// editable has focus, so the user can ⌘V it wherever they want.
+    static func copyToClipboard(_ text: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+    }
+
     private static func pasteKeystroke() {
         let src = CGEventSource(stateID: .combinedSessionState)
         let vDown = CGEvent(keyboardEventSource: src, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true)

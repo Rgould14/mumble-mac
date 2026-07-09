@@ -12,11 +12,14 @@ final class DictationController: ObservableObject {
     static let shared = DictationController()
 
     @Published var state: DictationState = .idle
+    /// Short outcome message shown in the Flow Bar after a session (e.g. copied).
+    @Published var notice: String?
     let transcriber = SpeechTranscriber()
     let hotkeys = HotkeyMonitor()
 
     private var startedAt = Date()
     private var targetApp: NSRunningApplication?
+    private var targetIsTextInput = false
     private var sessionTimer: Timer?
 
     var isDictating: Bool { if case .recording = state { return true }; return false }
@@ -67,6 +70,9 @@ final class DictationController: ObservableObject {
         guard case .idle = state else { return }
         let settings = AppState.shared.settings
         targetApp = NSWorkspace.shared.frontmostApplication
+        // Decide the destination now, while the user's click focus is intact.
+        targetIsTextInput = FocusDetector.focusedElementIsTextInput()
+        notice = nil
         do {
             try transcriber.start(locale: Locale(identifier: settings.localeIdentifier),
                                   onDeviceOnly: settings.onDeviceOnly)
@@ -112,15 +118,30 @@ final class DictationController: ObservableObject {
         let final = TextPolisher.postProcess(text, state: AppState.shared)
 
         state = .idle
-        FlowBarPanel.shared.hideSoon()
-        guard !final.isEmpty else { return }
+        guard !final.isEmpty else {
+            FlowBarPanel.shared.hideSoon()
+            return
+        }
 
         AppState.shared.history.insert(
             TranscriptEntry(text: final, appName: appName, date: Date(), durationSeconds: duration),
             at: 0)
-        targetApp?.activate()
-        try? await Task.sleep(nanoseconds: 150_000_000)
-        TextInserter.insert(final)
+
+        if targetIsTextInput {
+            targetApp?.activate()
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            TextInserter.insert(final)
+            FlowBarPanel.shared.hideSoon()
+        } else {
+            // No editable field focused: park it on the clipboard instead.
+            TextInserter.copyToClipboard(final)
+            notice = "Copied to clipboard — ⌘V to paste"
+            FlowBarPanel.shared.hideSoon(after: 2.2)
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 2_200_000_000)
+                self?.notice = nil
+            }
+        }
     }
 
     func cancel() {
