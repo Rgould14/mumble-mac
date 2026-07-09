@@ -8,7 +8,7 @@ final class FlowBarPanel {
     static let shared = FlowBarPanel()
     private var panel: NSPanel?
 
-    private static let size = NSSize(width: 460, height: 130)
+    private static let size = NSSize(width: 400, height: 104)
 
     func show() {
         if panel == nil { makePanel() }
@@ -61,16 +61,16 @@ struct FlowBarView: View {
             // Live transcript preview while recording.
             if controller.isDictating, !transcriber.liveText.isEmpty {
                 Text(transcriber.liveText)
-                    .font(.callout)
+                    .font(.caption)
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .truncationMode(.head)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 12)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 10)
                         .fill(Color.flowNavy.opacity(0.92)))
-                    .frame(maxWidth: 440)
+                    .frame(maxWidth: 380)
                     .transition(.opacity)
             }
 
@@ -89,64 +89,65 @@ struct FlowBarView: View {
                 }
             }
         }
-        .frame(width: 460, height: 130)
+        .frame(width: 400, height: 104)
         .animation(.easeOut(duration: 0.15), value: transcriber.liveText.isEmpty)
     }
 
     /// The Figma pill: navy capsule, white waveform, pink circular stop button
-    /// containing a white rounded square.
+    /// containing a white rounded square. Sized like Wispr Flow's bar.
     private var recordingPill: some View {
-        HStack(spacing: 14) {
-            WaveformView(level: transcriber.level)
-                .padding(.leading, 22)
+        HStack(spacing: 9) {
+            WaveformView(history: transcriber.levelHistory)
+                .padding(.leading, 15)
             Button { controller.stopAndInsert() } label: {
                 ZStack {
                     Circle().fill(Color.flowPink)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 3)
                         .fill(.white)
-                        .frame(width: 15, height: 15)
+                        .frame(width: 10, height: 10)
                 }
-                .frame(width: 38, height: 38)
+                .frame(width: 26, height: 26)
             }
             .buttonStyle(.plain)
-            .padding(.trailing, 7)
+            .padding(.trailing, 5)
             .help("Stop and insert (or press your shortcut)")
         }
-        .frame(height: 52)
+        .frame(height: 36)
         .background(Capsule().fill(Color.flowNavy))
         .onTapGesture { if controller.isDictating { controller.stopAndInsert() } }
     }
 
     private func statusPill(text: String, @ViewBuilder icon: () -> some View) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             icon()
-            Text(text).font(.callout).foregroundStyle(.white)
+            Text(text).font(.caption).foregroundStyle(.white)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
         .background(Capsule().fill(Color.flowNavy))
     }
 }
 
-/// White bars reacting to microphone level, matching the Figma waveform.
+/// Scrolling waveform driven by real mic levels: each bar is a recent level
+/// sample (newest on the right), so the shape follows your voice like the
+/// Voice Memos / Wispr Flow meters.
 struct WaveformView: View {
-    var level: Float
-    private let barCount = 17
+    var history: [Float]
+    private let barCount = SpeechTranscriber.historyLength
+    private let maxBar: CGFloat = 20
+    private let minBar: CGFloat = 2.5
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            HStack(spacing: 4) {
-                ForEach(0..<barCount, id: \.self) { i in
-                    let wobble = 0.5 + 0.5 * sin(t * 8 + Double(i) * 1.1)
-                    let base: CGFloat = i.isMultiple(of: 3) ? 10 : 6
-                    let h = base + CGFloat(level) * 22 * CGFloat(wobble)
-                    Capsule()
-                        .fill(.white)
-                        .frame(width: 3.5, height: min(h, 30))
-                }
+        HStack(spacing: 2.5) {
+            ForEach(0..<barCount, id: \.self) { i in
+                let idx = history.count - barCount + i
+                let sample = idx >= 0 && idx < history.count ? CGFloat(history[idx]) : 0
+                Capsule()
+                    .fill(.white)
+                    .frame(width: 2.5, height: max(minBar, sample * maxBar))
+                    .animation(.linear(duration: 0.05), value: sample)
             }
-            .frame(height: 30)
         }
+        .frame(height: maxBar)
     }
 }

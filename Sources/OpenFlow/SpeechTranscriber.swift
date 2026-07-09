@@ -7,6 +7,10 @@ import Speech
 final class SpeechTranscriber: NSObject, ObservableObject {
     @Published var liveText = ""
     @Published var level: Float = 0   // 0...1 smoothed RMS
+    /// Rolling window of recent levels (newest last) driving the scrolling
+    /// waveform, like Voice Memos.
+    @Published var levelHistory: [Float] = []
+    static let historyLength = 22
 
     private let audioEngine = AVAudioEngine()
     private var recognizer: SFSpeechRecognizer?
@@ -27,6 +31,7 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         stopEngine()
         liveText = ""
         finalText = ""
+        levelHistory = Array(repeating: 0, count: Self.historyLength)
 
         recognizer = SFSpeechRecognizer(locale: locale) ?? SFSpeechRecognizer()
         guard let recognizer, recognizer.isAvailable else {
@@ -109,7 +114,18 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         var sum: Float = 0
         for i in 0..<n { sum += data[i] * data[i] }
         let rms = sqrt(sum / Float(n))
-        let scaled = min(1, rms * 12)
-        DispatchQueue.main.async { self.level = self.level * 0.6 + scaled * 0.4 }
+        // Perceptual scaling: compress the dynamic range so quiet speech still
+        // moves the bars and shouting doesn't just pin them at max.
+        let scaled = min(1, pow(rms * 9, 0.6))
+        DispatchQueue.main.async {
+            // Fast attack, slower release — like the system voice meters.
+            self.level = scaled > self.level
+                ? self.level * 0.3 + scaled * 0.7
+                : self.level * 0.8 + scaled * 0.2
+            self.levelHistory.append(self.level)
+            if self.levelHistory.count > Self.historyLength {
+                self.levelHistory.removeFirst(self.levelHistory.count - Self.historyLength)
+            }
+        }
     }
 }
