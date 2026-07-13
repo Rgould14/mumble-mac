@@ -1,5 +1,7 @@
 import AppKit
 import SwiftUI
+import AVFoundation
+import Speech
 
 /// Window management for an LSUIElement (menu-bar) app.
 enum AppWindows {
@@ -44,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        NSLog("OpenFlow: launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission), mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue), speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
         setupMainMenu()
         setupStatusItem()
 

@@ -39,6 +39,7 @@ final class DictationController: ObservableObject {
     // MARK: Gestures
 
     private func pushToTalkDown() {
+        NSLog("OpenFlow: push-to-talk down (state=\(state))")
         switch state {
         case .recording(handsFree: true):
             stopAndInsert() // tapping the key ends a hands-free session
@@ -77,9 +78,11 @@ final class DictationController: ObservableObject {
             try transcriber.start(locale: Locale(identifier: settings.localeIdentifier),
                                   onDeviceOnly: settings.onDeviceOnly)
         } catch {
+            NSLog("OpenFlow: start failed: \(error.localizedDescription)")
             NSSound.beep()
             return
         }
+        NSLog("OpenFlow: recording started (handsFree=\(handsFree))")
         startedAt = Date()
         state = .recording(handsFree: handsFree)
         if settings.playSounds { Sounds.play("Pop") }
