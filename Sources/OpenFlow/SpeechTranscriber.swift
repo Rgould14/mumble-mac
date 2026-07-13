@@ -12,7 +12,13 @@ final class SpeechTranscriber: NSObject, ObservableObject {
     @Published var levelHistory: [Float] = []
     static let historyLength = 22
 
-    private let audioEngine = AVAudioEngine()
+    /// Built fresh per recording and fully released on stop. A long-lived engine
+    /// keeps the Bluetooth input device claimed, which pins AirPods/BT headsets
+    /// in the low-quality HFP profile (16 kHz mono) even after recording ends —
+    /// music stays degraded until the input HAL device is released. Tearing the
+    /// engine down and deallocating it lets CoreAudio switch the device back to
+    /// high-quality A2DP playback.
+    private var audioEngine: AVAudioEngine?
     private var recognizer: SFSpeechRecognizer?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
@@ -47,14 +53,16 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         }
         self.request = request
 
-        let input = audioEngine.inputNode
+        let engine = AVAudioEngine()
+        audioEngine = engine
+        let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.request?.append(buffer)
             self?.updateLevel(buffer)
         }
-        audioEngine.prepare()
-        try audioEngine.start()
+        engine.prepare()
+        try engine.start()
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }
@@ -95,9 +103,14 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         if let done { done(text) }
     }
 
+    /// Stop capture and fully release the input device so Bluetooth headsets
+    /// revert from HFP (low quality) back to A2DP (high quality).
     private func stopEngineOnly() {
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        guard let engine = audioEngine else { return }
+        engine.stop()
+        engine.inputNode.removeTap(onBus: 0)
+        engine.reset()
+        audioEngine = nil   // deallocate — releases the HAL input device
     }
 
     private func stopEngine() {
