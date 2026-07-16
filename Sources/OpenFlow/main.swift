@@ -46,9 +46,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        NSLog("OpenFlow: launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission), mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue), speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
+        Log.line("launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission) inputMonitoring=\(HotkeyMonitor.hasInputMonitoringPermission) mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
+        if !HotkeyMonitor.hasInputMonitoringPermission {
+            HotkeyMonitor.promptForInputMonitoring()
+        }
         setupMainMenu()
         setupStatusItem()
+
+        // Always ensure mic + speech authorization is requested — not just during
+        // first-run onboarding. Otherwise a reset/undetermined Speech grant never
+        // re-prompts and recognition silently returns nothing.
+        SpeechTranscriber.requestPermissions { _ in }
 
         if AppState.shared.settings.hasCompletedOnboarding {
             DictationController.shared.startMonitoring()
@@ -56,7 +64,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 HotkeyMonitor.promptForAccessibility()
             }
         } else {
-            SpeechTranscriber.requestPermissions { _ in }
             AppWindows.showOnboarding()
         }
     }

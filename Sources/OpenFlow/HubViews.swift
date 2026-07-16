@@ -249,6 +249,9 @@ struct SettingsView: View {
             Section("Transcription") {
                 TextField("Locale (e.g. en_US)", text: $state.settings.localeIdentifier)
                 Toggle("On-device recognition only", isOn: $state.settings.onDeviceOnly)
+                Toggle("Always use built-in microphone", isOn: $state.settings.preferBuiltInMic)
+                Text("Recommended with Bluetooth headphones: their mic is unreliable on macOS and drops music to call quality while recording.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Stepper("Max session: \(state.settings.maxSessionMinutes) min",
                         value: $state.settings.maxSessionMinutes, in: 1...60)
             }

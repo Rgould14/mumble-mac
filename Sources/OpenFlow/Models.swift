@@ -51,4 +51,32 @@ struct AppSettings: Codable, Equatable {
     /// Anthropic API key. If empty, ANTHROPIC_API_KEY from the environment is used.
     var anthropicAPIKey = ""
     var adaptToneByApp = true
+
+    /// Capture from the built-in mic even when a Bluetooth headset is the
+    /// system default input. BT headset mics force the low-quality HFP profile
+    /// (degrading music), engage slowly, and often deliver no audio on macOS.
+    var preferBuiltInMic = true
+}
+
+// Tolerant decoding: new fields fall back to their defaults instead of failing
+// the whole settings file (which would silently reset everything, incl. API key).
+extension AppSettings {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = AppSettings()
+        useFnKey = try c.decodeIfPresent(Bool.self, forKey: .useFnKey) ?? d.useFnKey
+        gesture = try c.decodeIfPresent(ActivationGesture.self, forKey: .gesture) ?? d.gesture
+        playSounds = try c.decodeIfPresent(Bool.self, forKey: .playSounds) ?? d.playSounds
+        removeFillerWords = try c.decodeIfPresent(Bool.self, forKey: .removeFillerWords) ?? d.removeFillerWords
+        autoCapitalize = try c.decodeIfPresent(Bool.self, forKey: .autoCapitalize) ?? d.autoCapitalize
+        localeIdentifier = try c.decodeIfPresent(String.self, forKey: .localeIdentifier) ?? d.localeIdentifier
+        onDeviceOnly = try c.decodeIfPresent(Bool.self, forKey: .onDeviceOnly) ?? d.onDeviceOnly
+        maxSessionMinutes = try c.decodeIfPresent(Int.self, forKey: .maxSessionMinutes) ?? d.maxSessionMinutes
+        hasCompletedOnboarding = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? d.hasCompletedOnboarding
+        useAICleanup = try c.decodeIfPresent(Bool.self, forKey: .useAICleanup) ?? d.useAICleanup
+        cleanupModel = try c.decodeIfPresent(String.self, forKey: .cleanupModel) ?? d.cleanupModel
+        anthropicAPIKey = try c.decodeIfPresent(String.self, forKey: .anthropicAPIKey) ?? d.anthropicAPIKey
+        adaptToneByApp = try c.decodeIfPresent(Bool.self, forKey: .adaptToneByApp) ?? d.adaptToneByApp
+        preferBuiltInMic = try c.decodeIfPresent(Bool.self, forKey: .preferBuiltInMic) ?? d.preferBuiltInMic
+    }
 }

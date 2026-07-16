@@ -9,6 +9,7 @@ struct PermissionsStatusView: View {
     @State private var mic = AVCaptureDevice.authorizationStatus(for: .audio)
     @State private var speech = SFSpeechRecognizer.authorizationStatus()
     @State private var ax = HotkeyMonitor.hasAccessibilityPermission
+    @State private var inputMon = HotkeyMonitor.hasInputMonitoringPermission
     private let tick = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -19,10 +20,15 @@ struct PermissionsStatusView: View {
             row("Speech Recognition", ok: speech == .authorized) {
                 SFSpeechRecognizer.requestAuthorization { _ in DispatchQueue.main.async { refresh() } }
             }
-            row("Accessibility (insert text & global hotkeys)", ok: ax) {
+            row("Accessibility (insert text)", ok: ax) {
                 HotkeyMonitor.promptForAccessibility()
                 NSWorkspace.shared.open(URL(string:
                     "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+            }
+            row("Input Monitoring (fn hotkey)", ok: inputMon) {
+                HotkeyMonitor.promptForInputMonitoring()
+                NSWorkspace.shared.open(URL(string:
+                    "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
             }
         }
         .onReceive(tick) { _ in refresh() }
@@ -32,6 +38,7 @@ struct PermissionsStatusView: View {
         mic = AVCaptureDevice.authorizationStatus(for: .audio)
         speech = SFSpeechRecognizer.authorizationStatus()
         ax = HotkeyMonitor.hasAccessibilityPermission
+        inputMon = HotkeyMonitor.hasInputMonitoringPermission
     }
 
     @ViewBuilder

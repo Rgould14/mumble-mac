@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import AudioToolbox
 import Speech
 
 /// Streams microphone audio into SFSpeechRecognizer and publishes
@@ -24,6 +25,17 @@ final class SpeechTranscriber: NSObject, ObservableObject {
     private var task: SFSpeechRecognitionTask?
     private var finalText = ""
     private var completion: ((String) -> Void)?
+    private var loggedFirstBuffer = false
+    /// Non-zero while we've overridden the system default input for a recording.
+    private var savedDefaultInput: AudioDeviceID = 0
+
+    private func restoreDefaultInput() {
+        guard savedDefaultInput != 0 else { return }
+        let dev = savedDefaultInput
+        savedDefaultInput = 0
+        AudioDevices.setDefaultInputDevice(dev)
+        Log.line("restored default input to \(AudioDevices.name(dev))")
+    }
 
     static func requestPermissions(_ done: @escaping (Bool) -> Void) {
         SFSpeechRecognizer.requestAuthorization { auth in
@@ -39,7 +51,16 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         finalText = ""
         levelHistory = Array(repeating: 0, count: Self.historyLength)
 
+        let authStatus = SFSpeechRecognizer.authorizationStatus()
+        Log.line("transcriber.start speechAuth=\(authStatus.rawValue) locale=\(locale.identifier)")
+        if authStatus != .authorized {
+            SFSpeechRecognizer.requestAuthorization { s in Log.line("speech auth callback = \(s.rawValue)") }
+            throw NSError(domain: "OpenFlow", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "Speech Recognition permission not granted (status \(authStatus.rawValue))"])
+        }
+
         recognizer = SFSpeechRecognizer(locale: locale) ?? SFSpeechRecognizer()
+        Log.line("recognizer available=\(recognizer?.isAvailable ?? false) onDeviceSupported=\(recognizer?.supportsOnDeviceRecognition ?? false)")
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "OpenFlow", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
@@ -53,31 +74,69 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         }
         self.request = request
 
+        // The Bluetooth headset mic (HFP) delivers no audio buffers to
+        // AVAudioEngine on macOS and drops music to call quality. When the
+        // system default input is Bluetooth, temporarily switch the default to
+        // the built-in mic — AVAudioEngine.inputNode follows the default — and
+        // restore it on stop. AVAudioEngine must be created AFTER the switch so
+        // it inherits the new device.
+        let currentDefault = AudioDevices.defaultInputDevice()
+        if AppState.shared.settings.preferBuiltInMic,
+           AudioDevices.isBluetooth(currentDefault),
+           let builtIn = AudioDevices.builtInInputDevice() {
+            savedDefaultInput = currentDefault
+            let ok = AudioDevices.setDefaultInputDevice(builtIn)
+            Log.line("switched default input \(AudioDevices.name(currentDefault)) -> \(AudioDevices.name(builtIn)) ok=\(ok)")
+        }
+
         let engine = AVAudioEngine()
         audioEngine = engine
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
+        Log.line("tap format sr=\(format.sampleRate) ch=\(format.channelCount)")
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            restoreDefaultInput()
+            audioEngine = nil
+            throw NSError(domain: "OpenFlow", code: 3, userInfo: [
+                NSLocalizedDescriptionKey: "No usable audio input device (format \(format.sampleRate)Hz/\(format.channelCount)ch)"])
+        }
+        loggedFirstBuffer = false
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            self?.request?.append(buffer)
-            self?.updateLevel(buffer)
+            guard let self else { return }
+            if !self.loggedFirstBuffer {
+                self.loggedFirstBuffer = true
+                Log.line("first audio buffer: frames=\(buffer.frameLength)")
+            }
+            self.request?.append(buffer)
+            self.updateLevel(buffer)
         }
         engine.prepare()
         try engine.start()
+        Log.line("engine running=\(engine.isRunning)")
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }
             DispatchQueue.main.async {
                 if let result {
                     self.liveText = result.bestTranscription.formattedString
-                    if result.isFinal { self.finish(with: result.bestTranscription.formattedString) }
+                    if result.isFinal {
+                        Log.line("recog FINAL (\(self.liveText.count) chars)")
+                        self.finish(with: result.bestTranscription.formattedString)
+                    }
                 }
-                if error != nil { self.finish(with: self.liveText) }
+                if let error {
+                    Log.line("recog ERROR: \(error.localizedDescription)")
+                    // Only abandon the session on error if we have nothing yet;
+                    // a mid-stream error after text shouldn't discard the audio.
+                    if self.liveText.isEmpty { self.finish(with: "") }
+                }
             }
         }
     }
 
     /// Stop listening; the recognizer finalizes and calls back with the full text.
     func stop(_ completion: @escaping (String) -> Void) {
+        Log.line("stop requested, liveText=\(liveText.count) chars")
         self.completion = completion
         request?.endAudio()
         stopEngineOnly()
@@ -111,6 +170,17 @@ final class SpeechTranscriber: NSObject, ObservableObject {
         engine.inputNode.removeTap(onBus: 0)
         engine.reset()
         audioEngine = nil   // deallocate — releases the HAL input device
+        // Restore the default input device only AFTER the engine (and its audio-
+        // unit device-change listener) is fully torn down. Doing it synchronously
+        // here races that listener and segfaults in IOUnitPropertyListener.
+        let toRestore = savedDefaultInput
+        savedDefaultInput = 0
+        if toRestore != 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                AudioDevices.setDefaultInputDevice(toRestore)
+                Log.line("restored default input to \(AudioDevices.name(toRestore))")
+            }
+        }
     }
 
     private func stopEngine() {

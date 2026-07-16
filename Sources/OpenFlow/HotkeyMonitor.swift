@@ -29,6 +29,14 @@ final class HotkeyMonitor {
 
     static var hasAccessibilityPermission: Bool { AXIsProcessTrusted() }
 
+    /// Global key-event monitors additionally require Input Monitoring on
+    /// modern macOS — Accessibility alone is not enough for flagsChanged/keyDown.
+    static var hasInputMonitoringPermission: Bool { CGPreflightListenEventAccess() }
+
+    static func promptForInputMonitoring() {
+        CGRequestListenEventAccess()   // triggers the Input Monitoring prompt
+    }
+
     static func promptForAccessibility() {
         let opts = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         AXIsProcessTrustedWithOptions(opts)
@@ -55,8 +63,14 @@ final class HotkeyMonitor {
         monitors = []
     }
 
+    private var debugFlagCount = 0
+
     private func handleFlags(_ event: NSEvent) {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if debugFlagCount < 12 {
+            debugFlagCount += 1
+            NSLog("OpenFlow: flagsChanged #\(debugFlagCount) flags=\(flags.rawValue) fn=\(flags.contains(.function))")
+        }
 
         if settings().useFnKey {
             let fn = flags.contains(.function)
