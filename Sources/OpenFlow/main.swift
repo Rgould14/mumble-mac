@@ -44,6 +44,11 @@ enum AppWindows {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
 
+    func applicationWillTerminate(_ notification: Notification) {
+        // Put the user's input device back if we switched it to the built-in mic.
+        SpeechTranscriber.restoreOriginalDefaultInput()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         Log.line("launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission) inputMonitoring=\(HotkeyMonitor.hasInputMonitoringPermission) mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")

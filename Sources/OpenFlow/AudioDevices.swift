@@ -42,6 +42,27 @@ enum AudioDevices {
         transportType(dev) == kAudioDeviceTransportTypeBluetooth
     }
 
+    /// CoreAudio device UID — matches AVCaptureDevice.uniqueID, so we can pick
+    /// the exact built-in mic in an AVCaptureSession.
+    static func deviceUID(_ dev: AudioDeviceID) -> String? {
+        var addr = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceUID,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        var cf: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let status = withUnsafeMutablePointer(to: &cf) {
+            AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, $0)
+        }
+        guard status == noErr, let cf else { return nil }
+        return cf.takeRetainedValue() as String
+    }
+
+    static func builtInInputUID() -> String? {
+        guard let dev = builtInInputDevice() else { return nil }
+        return deviceUID(dev)
+    }
+
     static func name(_ dev: AudioDeviceID) -> String {
         var addr = AudioObjectPropertyAddress(
             mSelector: kAudioObjectPropertyName,
