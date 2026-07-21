@@ -29,6 +29,26 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     private var task: SFSpeechRecognitionTask?
     private var completion: ((String) -> Void)?
     private var loggedFirstBuffer = false
+    private var onDeviceOnly = false
+
+    // Segmented continuous recognition. SFSpeechRecognizer revises its whole
+    // buffer as it goes (so earlier words get rewritten) and finalizes on a
+    // pause / ~1-min limit. We freeze each finalized chunk into `committedText`
+    // and immediately start a fresh recognition segment while the mic keeps
+    // running — so pauses don't end dictation and committed text is never
+    // rewritten. Displayed text = committedText + the live partial.
+    private var committedText = ""
+    private var partialText = ""
+    private var isRecording = false
+    private var lastSegmentStart = Date.distantPast
+
+    private func combined() -> String {
+        let a = committedText.trimmingCharacters(in: .whitespaces)
+        let b = partialText.trimmingCharacters(in: .whitespaces)
+        if a.isEmpty { return b }
+        if b.isEmpty { return a }
+        return a + " " + b
+    }
 
     /// Retained only for API compatibility with the app delegate; the
     /// AVCaptureSession approach never changes the system default input, so
@@ -47,6 +67,8 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     func start(locale: Locale, onDeviceOnly: Bool) throws {
         teardownSession()
         liveText = ""
+        committedText = ""
+        partialText = ""
         levelHistory = Array(repeating: 0, count: Self.historyLength)
 
         let authStatus = SFSpeechRecognizer.authorizationStatus()
@@ -64,14 +86,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
                           userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
         }
         self.recognizer = recognizer
-
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = true
-        request.addsPunctuation = true
-        if onDeviceOnly, recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
-        self.request = request
+        self.onDeviceOnly = onDeviceOnly
 
         // Pick the capture device explicitly — built-in mic by preference.
         let device = try captureDevice()
@@ -95,25 +110,76 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
 
         self.session = session
         loggedFirstBuffer = false
+        isRecording = true
         session.startRunning()
         Log.line("capture session running=\(session.isRunning)")
 
+        startSegment()
+    }
+
+    /// Begin a fresh recognition segment on the still-running capture session.
+    /// Called at start and again each time a segment finalizes, so long or
+    /// pause-broken dictation keeps going without ending the session.
+    private func startSegment() {
+        guard isRecording, let recognizer else { return }
+        task?.cancel()
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.addsPunctuation = true
+        if onDeviceOnly, recognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        }
+        self.request = request
+        partialText = ""
+        lastSegmentStart = Date()
+
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }
-            DispatchQueue.main.async {
-                if let result {
-                    self.liveText = result.bestTranscription.formattedString
-                    if result.isFinal {
-                        Log.line("recog FINAL (\(self.liveText.count) chars)")
-                        self.finish(with: result.bestTranscription.formattedString)
-                    }
-                }
-                if let error {
-                    Log.line("recog ERROR: \(error.localizedDescription)")
-                    if self.liveText.isEmpty { self.finish(with: "") }
+            DispatchQueue.main.async { self.handleResult(result, error: error) }
+        }
+    }
+
+    private func handleResult(_ result: SFSpeechRecognitionResult?, error: Error?) {
+        if let result {
+            partialText = result.bestTranscription.formattedString
+            liveText = combined()
+            if result.isFinal {
+                // Freeze this segment; keep listening if still recording.
+                commitPartial()
+                if isRecording {
+                    Log.line("segment committed (\(committedText.count) chars), continuing")
+                    startSegment()
+                } else {
+                    finishNow()
                 }
             }
+            return
         }
+        if let error {
+            let ns = error as NSError
+            Log.line("recog segment ended: \(error.localizedDescription) [\(ns.domain) \(ns.code)]")
+            commitPartial()
+            if isRecording {
+                // A pause/limit ended the segment. Restart so we keep listening.
+                // Guard against a tight error loop with a tiny delay.
+                let sinceStart = Date().timeIntervalSince(lastSegmentStart)
+                let delay = sinceStart < 0.3 ? 0.3 : 0.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard let self, self.isRecording else { return }
+                    self.startSegment()
+                }
+            } else {
+                finishNow()
+            }
+        }
+    }
+
+    private func commitPartial() {
+        let p = partialText.trimmingCharacters(in: .whitespaces)
+        guard !p.isEmpty else { return }
+        committedText = committedText.isEmpty ? p : committedText + " " + p
+        partialText = ""
     }
 
     /// The built-in mic (preferred) picked by CoreAudio UID, else the system
@@ -147,27 +213,35 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     // MARK: - Lifecycle
 
     func stop(_ completion: @escaping (String) -> Void) {
-        Log.line("stop requested, liveText=\(liveText.count) chars")
+        Log.line("stop requested, committed=\(committedText.count) partial=\(partialText.count)")
         self.completion = completion
-        request?.endAudio()
-        teardownSession()
+        isRecording = false          // no more segment restarts
+        request?.endAudio()          // flush the final segment → isFinal → finishNow()
+        teardownSession()            // release the mic immediately
+        // Safety net if the recognizer never delivers a final result.
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
             guard let self, self.completion != nil else { return }
-            self.finish(with: self.liveText)
+            self.finishNow()
         }
     }
 
     func cancel() {
         completion = nil
+        isRecording = false
         teardownSession()
         task?.cancel(); task = nil; request = nil
-        liveText = ""
+        committedText = ""; partialText = ""; liveText = ""
         level = 0
     }
 
-    private func finish(with text: String) {
+    /// Deliver the full accumulated text (all committed segments + the final
+    /// partial) exactly once, and tear everything down.
+    private func finishNow() {
+        commitPartial()
+        let text = committedText.trimmingCharacters(in: .whitespaces)
         let done = completion
         completion = nil
+        isRecording = false
         teardownSession()
         task?.cancel(); task = nil; request = nil
         level = 0
