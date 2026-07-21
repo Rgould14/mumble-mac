@@ -3,7 +3,7 @@ import AppKit
 
 enum HubSection: String, CaseIterable, Identifiable {
     case home = "Home", history = "History", dictionary = "Dictionary",
-         snippets = "Snippets", settings = "Settings"
+         snippets = "Snippets", learning = "Learning", settings = "Settings"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -11,6 +11,7 @@ enum HubSection: String, CaseIterable, Identifiable {
         case .history: "clock.arrow.circlepath"
         case .dictionary: "character.book.closed"
         case .snippets: "text.badge.plus"
+        case .learning: "brain"
         case .settings: "gearshape"
         }
     }
@@ -32,6 +33,7 @@ struct HubView: View {
             case .history: HistoryView()
             case .dictionary: DictionaryView()
             case .snippets: SnippetsView()
+            case .learning: LearningView()
             case .settings: SettingsView()
             }
         }
@@ -225,6 +227,53 @@ struct SnippetsView: View {
         }
         .padding(20)
         .navigationTitle("Snippets")
+    }
+}
+
+// MARK: - Learning
+
+struct LearningView: View {
+    @ObservedObject var state = AppState.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle("Learn from my edits", isOn: $state.settings.enableLearning)
+            Text("After a dictation lands, OpenFlow watches what you change in the text field and remembers your corrections. Ones seen twice are applied automatically; all recent ones guide the AI cleanup.")
+                .font(.caption).foregroundStyle(.secondary)
+
+            if state.corrections.isEmpty {
+                ContentUnavailableView("Nothing learned yet", systemImage: "brain",
+                                       description: Text("Dictate, then edit the result — your corrections will appear here."))
+            } else {
+                List {
+                    ForEach(state.corrections.sorted { ($0.count, $0.lastSeen) > ($1.count, $1.lastSeen) }) { c in
+                        HStack {
+                            Text(c.original).strikethrough().foregroundStyle(.secondary)
+                            Image(systemName: "arrow.right").font(.caption).foregroundStyle(.tertiary)
+                            Text(c.corrected).bold()
+                            Spacer()
+                            if c.count >= 2 {
+                                Text("auto ×\(c.count)")
+                                    .font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Capsule().fill(.green.opacity(0.2)))
+                            } else {
+                                Text("×\(c.count)").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Button { state.corrections.removeAll { $0.id == c.id } } label: {
+                                Image(systemName: "trash")
+                            }.buttonStyle(.borderless)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .toolbar {
+            Button(role: .destructive) { state.corrections = [] } label: {
+                Label("Forget all", systemImage: "trash")
+            }
+        }
+        .navigationTitle("Learning")
     }
 }
 

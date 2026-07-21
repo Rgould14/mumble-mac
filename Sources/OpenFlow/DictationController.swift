@@ -126,8 +126,11 @@ final class DictationController: ObservableObject {
         } catch {
             text = TextPolisher.polish(raw, state: AppState.shared)
         }
-        // Snippet expansion + dictionary still apply locally on top of LLM output.
-        let final = TextPolisher.postProcess(text, state: AppState.shared)
+        // Snippet expansion + dictionary + learned corrections apply locally on
+        // top of the LLM output.
+        let final = LearnedCorrections.apply(
+            TextPolisher.postProcess(text, state: AppState.shared),
+            state: AppState.shared)
 
         state = .idle
         guard !final.isEmpty else {
@@ -143,6 +146,9 @@ final class DictationController: ObservableObject {
             targetApp?.activate()
             try? await Task.sleep(nanoseconds: 150_000_000)
             TextInserter.insert(final)
+            // Learn from whatever the user edits in the field afterwards.
+            try? await Task.sleep(nanoseconds: 400_000_000)   // let the paste land
+            EditWatcher.shared.watch(inserted: final, appName: appName)
             FlowBarPanel.shared.hideSoon()
         } else {
             // No editable field focused: park it on the clipboard instead.

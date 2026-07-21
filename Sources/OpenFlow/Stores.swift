@@ -9,6 +9,7 @@ final class AppState: ObservableObject {
     @Published var history: [TranscriptEntry] { didSet { save(history, to: "history.json") } }
     @Published var dictionary: [DictionaryWord] { didSet { save(dictionary, to: "dictionary.json") } }
     @Published var snippets: [Snippet] { didSet { save(snippets, to: "snippets.json") } }
+    @Published var corrections: [Correction] { didSet { save(corrections, to: "corrections.json") } }
 
     private static var dir: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -22,6 +23,28 @@ final class AppState: ObservableObject {
         history = Self.load("history.json") ?? []
         dictionary = Self.load("dictionary.json") ?? []
         snippets = Self.load("snippets.json") ?? []
+        corrections = Self.load("corrections.json") ?? []
+    }
+
+    /// Record one learned correction, merging with an existing identical pair.
+    func recordCorrection(original: String, corrected: String, appName: String) {
+        let o = original.trimmingCharacters(in: .whitespacesAndNewlines)
+        let c = corrected.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !o.isEmpty, !c.isEmpty, o.lowercased() != c.lowercased(),
+              o.count <= 80, c.count <= 80 else { return }
+        if let i = corrections.firstIndex(where: {
+            $0.original.lowercased() == o.lowercased() && $0.corrected.lowercased() == c.lowercased()
+        }) {
+            corrections[i].count += 1
+            corrections[i].lastSeen = Date()
+            corrections[i].appName = appName
+        } else {
+            corrections.insert(Correction(original: o, corrected: c, appName: appName), at: 0)
+            if corrections.count > 300 {   // keep the store bounded
+                corrections.removeLast(corrections.count - 300)
+            }
+        }
+        Log.line("learned correction: '\(o)' -> '\(c)' (app \(appName))")
     }
 
     private static func load<T: Decodable>(_ name: String) -> T? {

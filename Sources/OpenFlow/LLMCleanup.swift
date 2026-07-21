@@ -30,7 +30,9 @@ enum LLMCleanup {
         guard trimmed.split(separator: " ").count >= 3 else { throw Unavailable() }
 
         let vocab = state.dictionary.map(\.word).filter { !$0.isEmpty }
-        let system = systemPrompt(appName: settings.adaptToneByApp ? appName : nil, vocab: vocab)
+        let system = systemPrompt(appName: settings.adaptToneByApp ? appName : nil,
+                                  vocab: vocab,
+                                  learned: LearnedCorrections.promptLines(state: state))
 
         var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
         req.httpMethod = "POST"
@@ -68,7 +70,7 @@ enum LLMCleanup {
         return text
     }
 
-    private static func systemPrompt(appName: String?, vocab: [String]) -> String {
+    private static func systemPrompt(appName: String?, vocab: [String], learned: [String]) -> String {
         var lines = [
             "You are a text-transformation function inside a dictation app, not an assistant. Input: a raw voice-dictation transcript between <transcript> tags, produced by a speech-to-text engine that often mis-segments or misspells words (e.g. \"ana Liye zing\" for \"analysing\"). Output: the cleaned transcript text, and nothing else.",
             "Rules:",
@@ -84,6 +86,10 @@ enum LLMCleanup {
         }
         if !vocab.isEmpty {
             lines.append("- Preferred spellings for names/jargon the user uses: \(vocab.joined(separator: ", ")). Prefer these exact spellings when the transcript clearly refers to them.")
+        }
+        if !learned.isEmpty {
+            lines.append("- The user has previously edited dictations as follows (original → their correction). Apply these exact fixes when they recur, and generalize the style/vocabulary patterns they imply:")
+            lines.append(contentsOf: learned.map { "  \($0)" })
         }
         return lines.joined(separator: "\n")
     }

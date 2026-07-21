@@ -16,6 +16,19 @@ struct DictionaryWord: Codable, Identifiable, Equatable {
     var replaces: String = ""
 }
 
+/// A learned correction: the user changed `original` (what we inserted) into
+/// `corrected` after dictation. Repeats increase `count`; high-count
+/// corrections are applied automatically and all recent ones are fed to the
+/// AI cleanup prompt as style/vocabulary guidance.
+struct Correction: Codable, Identifiable, Equatable {
+    var id = UUID()
+    var original: String
+    var corrected: String
+    var appName: String = ""
+    var count: Int = 1
+    var lastSeen: Date = Date()
+}
+
 struct Snippet: Codable, Identifiable, Equatable {
     var id = UUID()
     /// Spoken trigger phrase, e.g. "insert meeting link".
@@ -56,6 +69,10 @@ struct AppSettings: Codable, Equatable {
     /// system default input. BT headset mics force the low-quality HFP profile
     /// (degrading music), engage slowly, and often deliver no audio on macOS.
     var preferBuiltInMic = true
+
+    /// Learn from post-dictation edits: re-read the target field after
+    /// insertion, diff against what was inserted, and remember corrections.
+    var enableLearning = true
 }
 
 // Tolerant decoding: new fields fall back to their defaults instead of failing
@@ -78,5 +95,6 @@ extension AppSettings {
         anthropicAPIKey = try c.decodeIfPresent(String.self, forKey: .anthropicAPIKey) ?? d.anthropicAPIKey
         adaptToneByApp = try c.decodeIfPresent(Bool.self, forKey: .adaptToneByApp) ?? d.adaptToneByApp
         preferBuiltInMic = try c.decodeIfPresent(Bool.self, forKey: .preferBuiltInMic) ?? d.preferBuiltInMic
+        enableLearning = try c.decodeIfPresent(Bool.self, forKey: .enableLearning) ?? d.enableLearning
     }
 }
