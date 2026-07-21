@@ -153,6 +153,25 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
             if !isRecording && !result.isFinal && text.count < partialText.count {
                 return
             }
+            // Mid-recording, a pause makes the recognizer end the utterance and
+            // START A NEW ONE — bestTranscription resets to just the new words,
+            // with no isFinal and no error. Detect the boundary and freeze the
+            // previous utterance so it can't be overwritten:
+            //  - metadata is attached exactly when an utterance finalizes
+            //  - a large shrink in partial text means a reset already happened
+            if isRecording {
+                if result.speechRecognitionMetadata != nil, !result.isFinal {
+                    partialText = text
+                    commitPartial()
+                    Log.line("utterance finalized via metadata (\(committedText.count) chars total)")
+                    liveText = combined()
+                    return
+                }
+                if text.count + 12 < partialText.count {
+                    Log.line("utterance reset detected (\(partialText.count) -> \(text.count) chars); committing previous")
+                    commitPartial()
+                }
+            }
             partialText = text
             liveText = combined()
             if result.isFinal {
