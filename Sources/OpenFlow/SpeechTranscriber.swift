@@ -41,6 +41,9 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     private var partialText = ""
     private var isRecording = false
     private var lastSegmentStart = Date.distantPast
+    /// Text captured at the instant stop() is called — the floor for what we
+    /// deliver, in case late recognizer callbacks shrink or reset the buffer.
+    private var stopSnapshot = ""
 
     private func combined() -> String {
         let a = committedText.trimmingCharacters(in: .whitespaces)
@@ -69,6 +72,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
         liveText = ""
         committedText = ""
         partialText = ""
+        stopSnapshot = ""
         levelHistory = Array(repeating: 0, count: Self.historyLength)
 
         let authStatus = SFSpeechRecognizer.authorizationStatus()
@@ -142,7 +146,14 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
 
     private func handleResult(_ result: SFSpeechRecognitionResult?, error: Error?) {
         if let result {
-            partialText = result.bestTranscription.formattedString
+            let text = result.bestTranscription.formattedString
+            // After stop, the recognizer can emit a last empty/reset partial
+            // before (or instead of) the final — never let it shrink what we
+            // already heard, or the whole dictation gets lost.
+            if !isRecording && !result.isFinal && text.count < partialText.count {
+                return
+            }
+            partialText = text
             liveText = combined()
             if result.isFinal {
                 // Freeze this segment; keep listening if still recording.
@@ -215,6 +226,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     func stop(_ completion: @escaping (String) -> Void) {
         Log.line("stop requested, committed=\(committedText.count) partial=\(partialText.count)")
         self.completion = completion
+        stopSnapshot = combined()    // floor: never deliver less than this
         isRecording = false          // no more segment restarts
         request?.endAudio()          // flush the final segment → isFinal → finishNow()
         teardownSession()            // release the mic immediately
@@ -230,7 +242,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
         isRecording = false
         teardownSession()
         task?.cancel(); task = nil; request = nil
-        committedText = ""; partialText = ""; liveText = ""
+        committedText = ""; partialText = ""; liveText = ""; stopSnapshot = ""
         level = 0
     }
 
@@ -238,7 +250,14 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     /// partial) exactly once, and tear everything down.
     private func finishNow() {
         commitPartial()
-        let text = committedText.trimmingCharacters(in: .whitespaces)
+        var text = committedText.trimmingCharacters(in: .whitespaces)
+        // Late recognizer callbacks can shrink the buffer after stop; the
+        // snapshot taken at stop() is the floor.
+        if stopSnapshot.count > text.count {
+            Log.line("finish using stop-snapshot (\(stopSnapshot.count) > \(text.count) chars)")
+            text = stopSnapshot
+        }
+        stopSnapshot = ""
         let done = completion
         completion = nil
         isRecording = false
