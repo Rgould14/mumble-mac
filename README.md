@@ -1,4 +1,4 @@
-# OpenFlow
+# Mumble
 
 A native Swift macOS voice-dictation app modeled on [Wispr Flow](https://wisprflow.ai): speak into any app, release a key, and polished text appears where your cursor is.
 
@@ -22,11 +22,11 @@ Personal-dictionary spellings are passed to the model as context, and spoken sni
 
 ### API key
 
-The AI cleanup layer needs an Anthropic API key. Set it per-user in **Flow Hub → Settings → AI cleanup**, or export `ANTHROPIC_API_KEY` in the environment. Choose the model in the same panel — Opus 4.8 (most accurate, default), Haiku 4.5 (fastest), or Sonnet 5 (balanced). Turn AI cleanup off to run fully offline on rule-based polishing only.
+The AI cleanup layer needs an Anthropic API key. Set it per-user in **Mumble Hub → Settings → AI cleanup**, or export `ANTHROPIC_API_KEY` in the environment. Choose the model in the same panel — Opus 4.8 (most accurate, default), Haiku 4.5 (fastest), or Sonnet 5 (balanced). Turn AI cleanup off to run fully offline on rule-based polishing only.
 
-## Flow Hub
+## Mumble Hub
 
-Click the waveform icon in the menu bar → **Open Flow Hub** for:
+Click the waveform icon in the menu bar → **Open Mumble Hub** for:
 
 - **Home** — stats (words dictated, average WPM, day streak) and recent activity
 - **History** — searchable transcript log with copy buttons
@@ -39,8 +39,8 @@ Click the waveform icon in the menu bar → **Open Flow Hub** for:
 Requires macOS 14+ and Swift 6 command-line tools (no Xcode needed):
 
 ```bash
-./build-app.sh          # builds release + assembles dist/OpenFlow.app
-open dist/OpenFlow.app
+./build-app.sh          # builds release + assembles dist/Mumble.app
+open dist/Mumble.app
 ```
 
 First launch walks you through three permissions:
@@ -49,18 +49,18 @@ First launch walks you through three permissions:
 2. **Speech Recognition** — transcription
 3. **Accessibility** — global hotkeys + inserting text into other apps
 
-> **Important:** set System Settings → Keyboard → *"Press 🌐 key to"* = **Do Nothing**, otherwise macOS grabs the fn key before OpenFlow sees it. If you use a non-Apple keyboard, turn off "Use fn key" in Settings to use **Ctrl+Option** hold instead.
+> **Important:** set System Settings → Keyboard → *"Press 🌐 key to"* = **Do Nothing**, otherwise macOS grabs the fn key before Mumble sees it. If you use a non-Apple keyboard, turn off "Use fn key" in Settings to use **Ctrl+Option** hold instead.
 
 Because the app is ad-hoc signed, macOS resets privacy permissions if the binary changes — re-grant after rebuilding.
 
 ## Code map
 
-- `Sources/OpenFlow/main.swift` — app entry, menu bar item, windows
+- `Sources/Mumble/main.swift` — app entry, menu bar item, windows
 - `HotkeyMonitor.swift` — global fn / Ctrl+Opt / Esc / ⌘⌃V handling
 - `DictationController.swift` — session state machine
 - `SpeechTranscriber.swift` — AVAudioEngine → SFSpeechRecognizer streaming
 - `TextPolisher.swift` — filler removal, dictionary, snippets, cleanup
 - `TextInserter.swift` — clipboard-preserving Cmd+V injection
 - `FlowBarPanel.swift` — floating waveform pill (NSPanel)
-- `HubViews.swift`, `Onboarding.swift` — Flow Hub UI and setup flow
-- `Stores.swift` — JSON persistence in `~/Library/Application Support/OpenFlow/`
+- `HubViews.swift`, `Onboarding.swift` — Mumble Hub UI and setup flow
+- `Stores.swift` — JSON persistence in `~/Library/Application Support/Mumble/`

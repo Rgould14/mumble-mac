@@ -61,7 +61,7 @@ struct OnboardingView: View {
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(.tint)
-            Text("Set up OpenFlow").font(.largeTitle.bold())
+            Text("Set up Mumble").font(.largeTitle.bold())
             Text("Grant these three permissions, then hold **fn** in any app and start talking. Release the key and your words appear — polished.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -69,7 +69,7 @@ struct OnboardingView: View {
 
             GroupBox { PermissionsStatusView().padding(6) }.frame(maxWidth: 440)
 
-            Button("Start using OpenFlow") {
+            Button("Start using Mumble") {
                 state.settings.hasCompletedOnboarding = true
                 DictationController.shared.startMonitoring()
                 AppWindows.closeOnboarding()

@@ -13,7 +13,7 @@ enum AppWindows {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
                              backing: .buffered, defer: false)
-            w.title = "OpenFlow"
+            w.title = "Mumble"
             w.contentView = NSHostingView(rootView: HubView())
             w.center()
             w.isReleasedWhenClosed = false
@@ -28,7 +28,7 @@ enum AppWindows {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 540, height: 460),
                              styleMask: [.titled, .closable],
                              backing: .buffered, defer: false)
-            w.title = "Welcome to OpenFlow"
+            w.title = "Welcome to Mumble"
             w.contentView = NSHostingView(rootView: OnboardingView())
             w.center()
             w.isReleasedWhenClosed = false
@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "Quit OpenFlow",
+        appMenu.addItem(withTitle: "Quit Mumble",
                         action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
 
@@ -104,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "waveform",
-                                           accessibilityDescription: "OpenFlow")
+                                           accessibilityDescription: "Mumble")
 
         let menu = NSMenu()
         menu.addItem(withTitle: "Start hands-free dictation (fn + Space)",
@@ -112,9 +112,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "Paste last transcript (⌘⌃V)",
                      action: #selector(pasteLast), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Open Flow Hub…", action: #selector(openHub), keyEquivalent: "")
+        menu.addItem(withTitle: "Open Mumble Hub…", action: #selector(openHub), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit OpenFlow", action: #selector(quit), keyEquivalent: "q")
+        menu.addItem(withTitle: "Quit Mumble", action: #selector(quit), keyEquivalent: "q")
         for item in menu.items { item.target = self }
         statusItem.menu = menu
     }
@@ -124,6 +124,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openHub() { AppWindows.showHub() }
     @objc private func quit() { NSApp.terminate(nil) }
 }
+
+// One-time migration from the app's previous name: move the old OpenFlow
+// support directory (settings incl. API key, history, dictionary, snippets,
+// learned corrections) to Mumble. Must run before AppState/Log first touch it.
+func migrateLegacySupportDirectory() {
+    let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    let old = base.appendingPathComponent("OpenFlow")
+    let new = base.appendingPathComponent("Mumble")
+    if FileManager.default.fileExists(atPath: old.path),
+       !FileManager.default.fileExists(atPath: new.path) {
+        try? FileManager.default.moveItem(at: old, to: new)
+    }
+}
+migrateLegacySupportDirectory()
 
 let app = NSApplication.shared
 let delegate = AppDelegate()

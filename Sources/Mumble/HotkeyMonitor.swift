@@ -69,7 +69,7 @@ final class HotkeyMonitor {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         if debugFlagCount < 12 {
             debugFlagCount += 1
-            NSLog("OpenFlow: flagsChanged #\(debugFlagCount) flags=\(flags.rawValue) fn=\(flags.contains(.function))")
+            NSLog("Mumble: flagsChanged #\(debugFlagCount) flags=\(flags.rawValue) fn=\(flags.contains(.function))")
         }
 
         if settings().useFnKey {

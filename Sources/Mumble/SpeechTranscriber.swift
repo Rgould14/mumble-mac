@@ -23,7 +23,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     static let historyLength = 22
 
     private var session: AVCaptureSession?
-    private let sampleQueue = DispatchQueue(label: "com.team.openflow.audio")
+    private let sampleQueue = DispatchQueue(label: "com.team.mumble.audio")
     private var recognizer: SFSpeechRecognizer?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
@@ -79,14 +79,14 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
         Log.line("transcriber.start speechAuth=\(authStatus.rawValue) locale=\(locale.identifier)")
         if authStatus != .authorized {
             SFSpeechRecognizer.requestAuthorization { s in Log.line("speech auth callback = \(s.rawValue)") }
-            throw NSError(domain: "OpenFlow", code: 2, userInfo: [
+            throw NSError(domain: "Mumble", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "Speech Recognition permission not granted (status \(authStatus.rawValue))"])
         }
 
         let recognizer = SFSpeechRecognizer(locale: locale) ?? SFSpeechRecognizer()
         Log.line("recognizer available=\(recognizer?.isAvailable ?? false)")
         guard let recognizer, recognizer.isAvailable else {
-            throw NSError(domain: "OpenFlow", code: 1,
+            throw NSError(domain: "Mumble", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Speech recognizer unavailable"])
         }
         self.recognizer = recognizer
@@ -99,7 +99,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
         let session = AVCaptureSession()
         let input = try AVCaptureDeviceInput(device: device)
         guard session.canAddInput(input) else {
-            throw NSError(domain: "OpenFlow", code: 4, userInfo: [
+            throw NSError(domain: "Mumble", code: 4, userInfo: [
                 NSLocalizedDescriptionKey: "Cannot add audio input to capture session"])
         }
         session.addInput(input)
@@ -107,7 +107,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
         let output = AVCaptureAudioDataOutput()
         output.setSampleBufferDelegate(self, queue: sampleQueue)
         guard session.canAddOutput(output) else {
-            throw NSError(domain: "OpenFlow", code: 5, userInfo: [
+            throw NSError(domain: "Mumble", code: 5, userInfo: [
                 NSLocalizedDescriptionKey: "Cannot add audio output to capture session"])
         }
         session.addOutput(output)
@@ -224,7 +224,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
             deviceTypes: [.microphone], mediaType: .audio, position: .unspecified).devices
         if let def = AVCaptureDevice.default(for: .audio) { return def }
         if let first = discovered.first { return first }
-        throw NSError(domain: "OpenFlow", code: 6, userInfo: [
+        throw NSError(domain: "Mumble", code: 6, userInfo: [
             NSLocalizedDescriptionKey: "No audio capture device available"])
     }
 

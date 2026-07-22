@@ -49,7 +49,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Welcome to OpenFlow")
+                Text("Welcome to Mumble")
                     .font(.largeTitle.bold())
                 Text("Hold **fn** and speak into any app. Release to insert polished text. Double-tap **fn** or press **fn + Space** for hands-free. **Esc** cancels.")
                     .foregroundStyle(.secondary)
@@ -238,7 +238,7 @@ struct LearningView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Toggle("Learn from my edits", isOn: $state.settings.enableLearning)
-            Text("After a dictation lands, OpenFlow watches what you change in the text field and remembers your corrections. Ones seen twice are applied automatically; all recent ones guide the AI cleanup.")
+            Text("After a dictation lands, Mumble watches what you change in the text field and remembers your corrections. Ones seen twice are applied automatically; all recent ones guide the AI cleanup.")
                 .font(.caption).foregroundStyle(.secondary)
 
             if state.corrections.isEmpty {
@@ -292,7 +292,7 @@ struct SettingsView: View {
                 LabeledContent("Hands-free", value: "fn + Space, or double-tap fn")
                 LabeledContent("Paste last transcript", value: "⌘⌃V")
                 LabeledContent("Cancel", value: "Esc")
-                Text("Tip: set System Settings → Keyboard → “Press 🌐 key to” = Do Nothing so fn is free for OpenFlow.")
+                Text("Tip: set System Settings → Keyboard → “Press 🌐 key to” = Do Nothing so fn is free for Mumble.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Transcription") {

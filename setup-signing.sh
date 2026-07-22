@@ -1,5 +1,5 @@
 #!/bin/bash
-# Creates a stable self-signed code-signing certificate ("OpenFlow Dev") in the
+# Creates a stable self-signed code-signing certificate ("Mumble Dev") in the
 # login keychain, once. A stable signing identity keeps the app's designated
 # requirement constant across rebuilds, so macOS Accessibility / Microphone /
 # Speech permissions granted once survive every future `./build-app.sh`.
@@ -10,7 +10,7 @@
 # Run once per machine:  ./setup-signing.sh
 set -euo pipefail
 
-CERT_NAME="OpenFlow Dev"
+CERT_NAME="Mumble Dev"
 
 if security find-identity -v -p codesigning | grep -q "$CERT_NAME"; then
     echo "Signing identity \"$CERT_NAME\" already exists — nothing to do."
@@ -30,12 +30,12 @@ openssl req -newkey rsa:2048 -nodes -keyout "$TMP/key.pem" \
 
 # A non-empty password is required for the PKCS12 MAC to verify on import.
 openssl pkcs12 -export -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \
-    -out "$TMP/cert.p12" -passout pass:openflow -name "$CERT_NAME"
+    -out "$TMP/cert.p12" -passout pass:mumble -name "$CERT_NAME"
 
 # -A lets codesign use the private key without a keychain prompt on every build.
 security import "$TMP/cert.p12" \
     -k "$HOME/Library/Keychains/login.keychain-db" \
-    -P "openflow" -T /usr/bin/codesign -A
+    -P "mumble" -T /usr/bin/codesign -A
 
 echo "Created signing identity \"$CERT_NAME\"."
 echo "Now run ./build-app.sh and grant permissions once — they'll persist."

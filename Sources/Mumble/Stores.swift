@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// JSON-file-backed store in ~/Library/Application Support/OpenFlow/.
+/// JSON-file-backed store in ~/Library/Application Support/Mumble/.
 final class AppState: ObservableObject {
     static let shared = AppState()
 
@@ -13,7 +13,7 @@ final class AppState: ObservableObject {
 
     private static var dir: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("OpenFlow")
+            .appendingPathComponent("Mumble")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }

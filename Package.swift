@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenFlow",
+    name: "Mumble",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "OpenFlow",
-            path: "Sources/OpenFlow"
+            name: "Mumble",
+            path: "Sources/Mumble"
         )
     ]
 )
