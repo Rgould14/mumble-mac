@@ -73,6 +73,10 @@ struct AppSettings: Codable, Equatable {
     /// Learn from post-dictation edits: re-read the target field after
     /// insertion, diff against what was inserted, and remember corrections.
     var enableLearning = true
+
+    /// Running count of automatic fixes applied to dictations (dictionary
+    /// replacements + learned corrections) — surfaced in Insights.
+    var totalFixesApplied = 0
 }
 
 // Tolerant decoding: new fields fall back to their defaults instead of failing
@@ -96,5 +100,6 @@ extension AppSettings {
         adaptToneByApp = try c.decodeIfPresent(Bool.self, forKey: .adaptToneByApp) ?? d.adaptToneByApp
         preferBuiltInMic = try c.decodeIfPresent(Bool.self, forKey: .preferBuiltInMic) ?? d.preferBuiltInMic
         enableLearning = try c.decodeIfPresent(Bool.self, forKey: .enableLearning) ?? d.enableLearning
+        totalFixesApplied = try c.decodeIfPresent(Int.self, forKey: .totalFixesApplied) ?? d.totalFixesApplied
     }
 }

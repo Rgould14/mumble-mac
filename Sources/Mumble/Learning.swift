@@ -142,11 +142,15 @@ enum LearnedCorrections {
     static func apply(_ text: String, state: AppState) -> String {
         guard state.settings.enableLearning else { return text }
         var out = text
+        var fixes = 0
         for c in state.corrections where c.count >= 2 {
             let pattern = "(?i)\\b" + NSRegularExpression.escapedPattern(for: c.original) + "\\b"
-            out = out.replacingOccurrences(of: pattern, with: c.corrected,
-                                           options: .regularExpression)
+            let replaced = out.replacingOccurrences(of: pattern, with: c.corrected,
+                                                    options: .regularExpression)
+            if replaced != out { fixes += 1 }
+            out = replaced
         }
+        if fixes > 0 { state.settings.totalFixesApplied += fixes }
         return out
     }
 

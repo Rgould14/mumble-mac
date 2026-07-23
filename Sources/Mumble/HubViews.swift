@@ -2,12 +2,13 @@ import SwiftUI
 import AppKit
 
 enum HubSection: String, CaseIterable, Identifiable {
-    case home = "Home", history = "History", dictionary = "Dictionary",
+    case home = "Home", insights = "Insights", history = "History", dictionary = "Dictionary",
          snippets = "Snippets", learning = "Learning", settings = "Settings"
     var id: String { rawValue }
     var icon: String {
         switch self {
         case .home: "house"
+        case .insights: "chart.bar"
         case .history: "clock.arrow.circlepath"
         case .dictionary: "character.book.closed"
         case .snippets: "text.badge.plus"
@@ -30,6 +31,7 @@ struct HubView: View {
         } detail: {
             switch section {
             case .home: HomeView()
+            case .insights: InsightsView()
             case .history: HistoryView()
             case .dictionary: DictionaryView()
             case .snippets: SnippetsView()
@@ -51,7 +53,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 14) {
-                    if let logo = Theme.logoNavy {
+                    if let logo = Theme.logoMark {
                         Image(nsImage: logo)
                             .resizable().scaledToFit()
                             .frame(width: 44, height: 44)

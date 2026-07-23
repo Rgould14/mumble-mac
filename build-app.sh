@@ -16,7 +16,7 @@ cp Support/Info.plist "$APP/Contents/Info.plist"
 
 # Design-system resources: app icon, logos, Goodly fonts.
 cp Support/Assets/AppIcon.icns "$APP/Contents/Resources/"
-cp Support/Assets/logo-navy.png Support/Assets/logo-horizontal.png "$APP/Contents/Resources/"
+cp Support/Assets/logo-navy.png Support/Assets/logo-alternate.png Support/Assets/logo-horizontal.png "$APP/Contents/Resources/"
 mkdir -p "$APP/Contents/Resources/Fonts"
 cp Support/Assets/Fonts/*.otf "$APP/Contents/Resources/Fonts/"
 cp Support/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"

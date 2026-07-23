@@ -32,8 +32,8 @@ enum Theme {
         }
     }
 
-    /// The all-navy square mark used in in-app chrome.
-    static var logoNavy: NSImage? {
-        Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("logo-navy.png")) }
+    /// The two-tone square mark used in in-app chrome (matches the app icon).
+    static var logoMark: NSImage? {
+        Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("logo-alternate.png")) }
     }
 }

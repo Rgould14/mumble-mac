@@ -65,6 +65,31 @@ final class AppState: ObservableObject {
         guard secs > 1 else { return 0 }
         return Int(Double(totalWords) / (secs / 60.0))
     }
+    var longestStreak: Int {
+        let days = Set(history.map { Calendar.current.startOfDay(for: $0.date) }).sorted()
+        var best = 0, run = 0
+        var prev: Date?
+        for d in days {
+            if let p = prev, Calendar.current.date(byAdding: .day, value: 1, to: p) == d {
+                run += 1
+            } else {
+                run = 1
+            }
+            best = max(best, run)
+            prev = d
+        }
+        return best
+    }
+
+    /// Words dictated per day, for the Insights heatmap.
+    var wordsByDay: [Date: Int] {
+        var out: [Date: Int] = [:]
+        for e in history {
+            out[Calendar.current.startOfDay(for: e.date), default: 0] += e.wordCount
+        }
+        return out
+    }
+
     var streakDays: Int {
         let days = Set(history.map { Calendar.current.startOfDay(for: $0.date) })
         var streak = 0

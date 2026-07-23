@@ -16,10 +16,14 @@ enum TextPolisher {
         if let snip = state.snippets.first(where: { $0.trigger.lowercased() == lowered }) {
             return snip.expansion
         }
+        var fixes = 0
         for entry in state.dictionary where !entry.replaces.isEmpty {
             let pattern = "(?i)\\b" + NSRegularExpression.escapedPattern(for: entry.replaces) + "\\b"
-            out = out.replacingOccurrences(of: pattern, with: entry.word, options: .regularExpression)
+            let replaced = out.replacingOccurrences(of: pattern, with: entry.word, options: .regularExpression)
+            if replaced != out { fixes += 1 }
+            out = replaced
         }
+        if fixes > 0 { state.settings.totalFixesApplied += fixes }
         return out
     }
 
