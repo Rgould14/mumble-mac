@@ -37,6 +37,12 @@ enum TextInserter {
         pb.setString(text, forType: .string)
     }
 
+    /// Synthesize ⌘V without touching the pasteboard — used with
+    /// copyToClipboard for the paste-and-keep flow on opaque (Electron) focus.
+    static func pasteKeystrokeOnly() {
+        pasteKeystroke()
+    }
+
     private static func pasteKeystroke() {
         let src = CGEventSource(stateID: .combinedSessionState)
         let vDown = CGEvent(keyboardEventSource: src, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true)

@@ -19,7 +19,7 @@ final class DictationController: ObservableObject {
 
     private var startedAt = Date()
     private var targetApp: NSRunningApplication?
-    private var targetIsTextInput = false
+    private var focusTarget: FocusTarget = .notEditable
     private var sessionTimer: Timer?
 
     var isDictating: Bool { if case .recording = state { return true }; return false }
@@ -72,7 +72,8 @@ final class DictationController: ObservableObject {
         let settings = AppState.shared.settings
         targetApp = NSWorkspace.shared.frontmostApplication
         // Decide the destination now, while the user's click focus is intact.
-        targetIsTextInput = FocusDetector.focusedElementIsTextInput()
+        focusTarget = FocusDetector.classifyFocus()
+        Log.line("target app=\(targetApp?.localizedName ?? "?") focus=\(focusTarget)")
         notice = nil
         do {
             try transcriber.start(locale: Locale(identifier: settings.localeIdentifier),
@@ -142,16 +143,27 @@ final class DictationController: ObservableObject {
             TranscriptEntry(text: final, appName: appName, date: Date(), durationSeconds: duration),
             at: 0)
 
-        if targetIsTextInput {
+        Log.line("insert path: \(focusTarget) chars=\(final.count)")
+        switch focusTarget {
+        case .textInput:
             targetApp?.activate()
             try? await Task.sleep(nanoseconds: 150_000_000)
-            TextInserter.insert(final)
-            // Learn from whatever the user edits in the field afterwards.
+            TextInserter.insert(final)   // restores the user's clipboard after
             try? await Task.sleep(nanoseconds: 400_000_000)   // let the paste land
             EditWatcher.shared.watch(inserted: final, appName: appName)
             FlowBarPanel.shared.hideSoon()
-        } else {
-            // No editable field focused: park it on the clipboard instead.
+        case .ambiguous:
+            // Opaque focus (Electron/web): paste AND keep the text on the
+            // clipboard, so it lands in the field when one is focused and is
+            // never lost when one isn't.
+            targetApp?.activate()
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            TextInserter.copyToClipboard(final)
+            TextInserter.pasteKeystrokeOnly()
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            EditWatcher.shared.watch(inserted: final, appName: appName)
+            FlowBarPanel.shared.hideSoon()
+        case .notEditable:
             TextInserter.copyToClipboard(final)
             notice = "Copied to clipboard — ⌘V to paste"
             FlowBarPanel.shared.hideSoon(after: 2.2)
