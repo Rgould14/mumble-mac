@@ -72,8 +72,19 @@ final class DictationController: ObservableObject {
     /// prompt for the inferred target before inserting.
     func togglePromptMode() {
         switch state {
-        case .idle: start(handsFree: true, prompt: true)
-        case .recording: stopAndInsert()
+        case .idle:
+            start(handsFree: true, prompt: true)
+        case .recording:
+            // fn+P arrives moments after the fn hold already started a PTT
+            // session — upgrade it to Prompt Mode instead of stopping it, and
+            // make it hands-free so releasing fn doesn't end it.
+            if !promptMode, Date().timeIntervalSince(startedAt) < 2.0 {
+                promptMode = true
+                state = .recording(handsFree: true)
+                Log.line("session upgraded to prompt mode")
+            } else {
+                stopAndInsert()
+            }
         default: break
         }
     }
