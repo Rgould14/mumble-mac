@@ -17,9 +17,9 @@ enum Theme {
     static let grey = Color(red: 0x6E/255, green: 0x6E/255, blue: 0x73/255)       // secondary text
     static let surface = Color(red: 0xF8/255, green: 0xF8/255, blue: 0xF8/255)    // wells, stat cards
 
-    // Goodly — display headings and stat numbers only, never body/controls.
-    static func display(_ size: CGFloat = 28) -> Font { .custom("GoodlySemibold", size: size) }
-    static func heading(_ size: CGFloat = 20) -> Font { .custom("GoodlySemibold", size: size) }
+    // Headings use SF Pro (system). Goodly remains only for oversized stat numbers.
+    static func display(_ size: CGFloat = 28) -> Font { .system(size: size, weight: .semibold) }
+    static func heading(_ size: CGFloat = 20) -> Font { .system(size: size, weight: .semibold) }
     static func statNumber(_ size: CGFloat = 30) -> Font { .custom("GoodlyLight", size: size) }
 
     /// Register bundled Goodly OTFs (process-scoped). Call once at launch.
@@ -32,8 +32,13 @@ enum Theme {
         }
     }
 
-    /// The two-tone square mark used in in-app chrome (matches the app icon).
+    /// The all-navy square mark used in in-app chrome.
     static var logoMark: NSImage? {
-        Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("logo-alternate.png")) }
+        Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("logo-navy.png")) }
+    }
+
+    /// Horizontal navy lockup for the sidebar.
+    static var logoHorizontal: NSImage? {
+        Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("logo-horizontal.png")) }
     }
 }

@@ -24,10 +24,20 @@ struct HubView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(HubSection.allCases, selection: $section) { s in
-                Label(s.rawValue, systemImage: s.icon).tag(s)
+            VStack(alignment: .leading, spacing: 0) {
+                if let lockup = Theme.logoHorizontal {
+                    Image(nsImage: lockup)
+                        .resizable().scaledToFit()
+                        .frame(height: 30)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 14)
+                        .padding(.bottom, 6)
+                }
+                List(HubSection.allCases, selection: $section) { s in
+                    Label(s.rawValue, systemImage: s.icon).tag(s)
+                }
             }
-            .navigationSplitViewColumnWidth(min: 170, ideal: 180)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 195)
         } detail: {
             switch section {
             case .home: HomeView()
