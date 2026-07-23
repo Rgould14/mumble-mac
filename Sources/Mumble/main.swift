@@ -3,7 +3,7 @@ import SwiftUI
 import AVFoundation
 import Speech
 
-/// Window management for an LSUIElement (menu-bar) app.
+/// Window management for the menu-bar + Dock hybrid app.
 enum AppWindows {
     static var hub: NSWindow?
     static var onboarding: NSWindow?
@@ -49,8 +49,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SpeechTranscriber.restoreOriginalDefaultInput()
     }
 
+    /// Dock icon click with no open windows (launch, or after closing the Hub) — bring up
+    /// the Hub instead of doing nothing, which is what a windowless Dock click would do by default.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            AppWindows.showHub()
+        }
+        return true
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        // .regular (not .accessory) gives Mumble a Dock icon and Cmd+Tab presence, so it can
+        // be launched from the Dock instead of only via the menu-bar item.
+        NSApp.setActivationPolicy(.regular)
+        Theme.registerFonts()
         Log.line("launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission) inputMonitoring=\(HotkeyMonitor.hasInputMonitoringPermission) mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
         if !HotkeyMonitor.hasInputMonitoringPermission {
             HotkeyMonitor.promptForInputMonitoring()
@@ -103,8 +115,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "waveform",
-                                           accessibilityDescription: "Mumble")
+        let logo = Bundle.module.image(forResource: "MenuBarIcon")
+        // Template mode lets AppKit recolor the (black, transparent-bg) logo for light/dark
+        // menu bars and the selected/highlighted state, same as a monochrome SF Symbol would.
+        logo?.isTemplate = true
+        logo?.size = NSSize(width: 18, height: 18)
+        statusItem.button?.image = logo ?? NSImage(systemSymbolName: "waveform",
+                                                     accessibilityDescription: "Mumble")
 
         let menu = NSMenu()
         menu.addItem(withTitle: "Start hands-free dictation (fn + Space)",

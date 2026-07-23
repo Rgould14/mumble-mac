@@ -38,6 +38,7 @@ struct HubView: View {
             }
         }
         .frame(minWidth: 720, minHeight: 480)
+        .tint(Theme.navy)
     }
 }
 
@@ -49,8 +50,16 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Welcome to Mumble")
-                    .font(.largeTitle.bold())
+                HStack(spacing: 14) {
+                    if let logo = Theme.logoNavy {
+                        Image(nsImage: logo)
+                            .resizable().scaledToFit()
+                            .frame(width: 44, height: 44)
+                    }
+                    Text("Welcome to Mumble")
+                        .font(Theme.display(28))
+                        .foregroundStyle(Theme.ink)
+                }
                 Text("Hold **fn** and speak into any app. Release to insert polished text. Double-tap **fn** or press **fn + Space** for hands-free. **Esc** cancels.")
                     .foregroundStyle(.secondary)
 
@@ -60,7 +69,7 @@ struct HomeView: View {
                     StatCard(title: "Day streak", value: "\(state.streakDays)")
                 }
 
-                Text("Recent activity").font(.title3.bold())
+                Text("Recent activity").font(Theme.heading(20)).foregroundStyle(Theme.ink)
                 if state.history.isEmpty {
                     Text("No dictations yet — hold fn and say something!")
                         .foregroundStyle(.secondary)
@@ -81,12 +90,15 @@ struct StatCard: View {
     let title: String, value: String
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(value).font(.system(size: 28, weight: .bold, design: .rounded))
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value)
+                .font(Theme.statNumber(30))   // Goodly Light — oversized stat numbers
+                .foregroundStyle(Theme.ink)
+            Text(title).font(.system(size: 11)).foregroundStyle(Theme.grey)
         }
-        .padding(16)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(.quaternary.opacity(0.5)))
+        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surface))
     }
 }
 
@@ -107,8 +119,9 @@ struct TranscriptRow: View {
                 .help("Copy")
             }
         }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.35)))
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surface))
     }
 }
 

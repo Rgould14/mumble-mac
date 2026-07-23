@@ -1,14 +1,14 @@
 import AppKit
 import SwiftUI
 
-/// The floating "Flow Bar": a dark navy pill at the bottom-center of the screen
-/// with a live waveform, a pink stop button, and a live transcript preview.
-/// Non-activating so focus stays in the target app.
+/// The recording HUD: floating overlay at the bottom-center of the screen —
+/// transcript bubble + recording/processing/clipboard pills, per the Mumble
+/// design system. Non-activating so focus stays in the target app.
 final class FlowBarPanel {
     static let shared = FlowBarPanel()
     private var panel: NSPanel?
 
-    private static let size = NSSize(width: 400, height: 104)
+    private static let size = NSSize(width: 460, height: 118)
 
     func show() {
         if panel == nil { makePanel() }
@@ -39,15 +39,11 @@ final class FlowBarPanel {
     private func position() {
         guard let panel, let screen = NSScreen.main else { return }
         let f = screen.visibleFrame
-        panel.setFrame(NSRect(x: f.midX - Self.size.width / 2, y: f.minY + 12,
+        // 24px above the dock/screen bottom per the design spec.
+        panel.setFrame(NSRect(x: f.midX - Self.size.width / 2, y: f.minY + 16,
                               width: Self.size.width, height: Self.size.height),
                        display: true)
     }
-}
-
-private extension Color {
-    static let flowNavy = Color(red: 0x23 / 255.0, green: 0x2A / 255.0, blue: 0x42 / 255.0)
-    static let flowPink = Color(red: 0xF0 / 255.0, green: 0x6E / 255.0, blue: 0xBC / 255.0)
 }
 
 struct FlowBarView: View {
@@ -55,87 +51,108 @@ struct FlowBarView: View {
     @ObservedObject var transcriber = DictationController.shared.transcriber
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Spacer(minLength: 0)
 
-            // Live transcript preview while recording.
+            // Transcript bubble: last two lines while speaking.
             if controller.isDictating, !transcriber.liveText.isEmpty {
                 Text(transcriber.liveText)
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineSpacing(4)
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .truncationMode(.head)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.flowNavy.opacity(0.92)))
-                    .frame(maxWidth: 380)
-                    .transition(.opacity)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.hudInk))
+                    .frame(maxWidth: 430)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             switch controller.state {
             case .recording:
                 recordingPill
+                    .transition(.opacity)
             case .processing:
-                statusPill(text: "Polishing…") {
-                    ProgressView().controlSize(.small).tint(.white)
-                }
+                statusPill(text: "Polishing…") { HUDSpinner() }
+                    .transition(.opacity)
             case .idle:
                 if let notice = controller.notice {
                     statusPill(text: notice) {
-                        Image(systemName: "doc.on.clipboard").foregroundStyle(Color.flowPink)
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.pink)
                     }
+                    .transition(.opacity)
                 }
             }
         }
-        .frame(width: 400, height: 104)
-        .animation(.easeOut(duration: 0.15), value: transcriber.liveText.isEmpty)
+        .frame(width: 460, height: 118)
+        .animation(.easeOut(duration: 0.18), value: controller.state)
+        .animation(.easeOut(duration: 0.18), value: transcriber.liveText.isEmpty)
     }
 
-    /// The Figma pill: navy capsule, white waveform, pink circular stop button
-    /// containing a white rounded square. Sized like Wispr Flow's bar.
+    /// Recording pill: HUD Ink, waveform + 40px pink stop control.
     private var recordingPill: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 12) {
             WaveformView(history: transcriber.levelHistory)
-                .padding(.leading, 15)
             Button { controller.stopAndInsert() } label: {
                 ZStack {
-                    Circle().fill(Color.flowPink)
-                    RoundedRectangle(cornerRadius: 3)
+                    Circle().fill(Theme.pink)
+                    RoundedRectangle(cornerRadius: 4)
                         .fill(.white)
                         .frame(width: 10, height: 10)
                 }
-                .frame(width: 26, height: 26)
+                .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
-            .padding(.trailing, 5)
             .help("Stop and insert (or press your shortcut)")
         }
-        .frame(height: 36)
-        .background(Capsule().fill(Color.flowNavy))
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(Theme.hudInk))
         .onTapGesture { if controller.isDictating { controller.stopAndInsert() } }
     }
 
     private func statusPill(text: String, @ViewBuilder icon: () -> some View) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             icon()
-            Text(text).font(.caption).foregroundStyle(.white)
+            Text(text).font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 15)
         .padding(.vertical, 9)
-        .background(Capsule().fill(Color.flowNavy))
+        .background(Capsule().fill(Theme.hudInk))
     }
 }
 
-/// Scrolling waveform driven by real mic levels: each bar is a recent level
-/// sample (newest on the right), so the shape follows your voice like the
-/// Voice Memos / Wispr Flow meters.
+/// 14px ring spinner: white arc on 25% white track, 0.8s linear rotation.
+struct HUDSpinner: View {
+    @State private var spinning = false
+    var body: some View {
+        Circle()
+            .stroke(.white.opacity(0.25), lineWidth: 2.5)
+            .overlay(
+                Circle()
+                    .trim(from: 0, to: 0.28)
+                    .stroke(.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(spinning ? 360 : 0))
+                    .animation(.linear(duration: 0.8).repeatForever(autoreverses: false),
+                               value: spinning)
+            )
+            .frame(width: 14, height: 14)
+            .onAppear { spinning = true }
+    }
+}
+
+/// Live waveform: 26 white bars, 3px wide, 2.5px gap, heights 8–26px driven by
+/// real mic level samples (newest on the right) — never faked loops.
 struct WaveformView: View {
     var history: [Float]
     private let barCount = SpeechTranscriber.historyLength
-    private let maxBar: CGFloat = 20
-    private let minBar: CGFloat = 2.5
+    private let maxBar: CGFloat = 18
+    private let minBar: CGFloat = 4
 
     var body: some View {
         HStack(spacing: 2.5) {
@@ -144,7 +161,7 @@ struct WaveformView: View {
                 let sample = idx >= 0 && idx < history.count ? CGFloat(history[idx]) : 0
                 Capsule()
                     .fill(.white)
-                    .frame(width: 2.5, height: max(minBar, sample * maxBar))
+                    .frame(width: 2.5, height: minBar + sample * (maxBar - minBar))
                     .animation(.linear(duration: 0.05), value: sample)
             }
         }

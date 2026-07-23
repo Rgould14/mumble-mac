@@ -20,7 +20,7 @@ final class SpeechTranscriber: NSObject, ObservableObject, AVCaptureAudioDataOut
     /// Rolling window of recent levels (newest last) driving the scrolling
     /// waveform, like Voice Memos.
     @Published var levelHistory: [Float] = []
-    static let historyLength = 22
+    static let historyLength = 26
 
     private var session: AVCaptureSession?
     private let sampleQueue = DispatchQueue(label: "com.team.mumble.audio")

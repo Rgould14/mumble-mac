@@ -7,7 +7,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Mumble",
-            path: "Sources/Mumble"
+            path: "Sources/Mumble",
+            resources: [.copy("Resources/MenuBarIcon.png")]
         )
     ]
 )
