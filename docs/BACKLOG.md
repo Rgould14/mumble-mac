@@ -67,3 +67,66 @@ rewritten prompt become corrections scoped to Prompt Mode.
 3. `PromptRewriter` (Claude call, templates per target)
 4. HUD target chooser (keyboard-first)
 5. History entries store raw + rewritten pair; Learning integration
+
+## Home dashboard — additional widgets (planned, not started)
+
+Goal: differentiate the Home screen from Wispr Flow by surfacing what's uniquely
+Mumble (learning loop, bilingual use, Prompt Mode, content) below the existing
+stat cards + app-usage + streak. All buildable from existing local data
+(`history.json`, `corrections.json`, `settings.json`) — no new tracking.
+
+Prereq for language/prompt widgets: `TranscriptEntry` currently stores
+{text, appName, date, durationSeconds}. Add optional `locale` and `wasPrompt`
+fields (tolerant-decode, default nil/false) so new entries carry them; old
+entries degrade gracefully.
+
+### Tier 1 — recommended (distinctive + motivating)
+
+1. **What Mumble learned this week** *(top pick)*
+   - Source: `corrections` filtered to lastSeen within 7 days, newest first.
+   - Layout: Surface card, list of `original → corrected` rows with count; each
+     row an "Add to dictionary" button (writes a DictionaryWord).
+   - Why: exposes the learning flywheel Wispr hides; turns passive data into action.
+   - Effort: low. No model changes.
+
+2. **Language split**
+   - Source: sum wordCount by `entry.locale` (needs the new field; until then,
+     everything reads as the primary language).
+   - Layout: single horizontal split bar (EN vs VI…) + legend, in the navy ramp.
+   - Why: foregrounds the bilingual use case that's the team's reason for
+     multilingual support.
+   - Effort: low once `locale` is stored.
+
+3. **Time saved**
+   - Source: totalWords. Estimate = words/40wpm (typing) − words/150wpm (speaking),
+     shown as "≈ X hours saved vs typing".
+   - Layout: one stat tile or a slim banner; pink accent on the number.
+   - Why: concrete, satisfying, motivational; Wispr doesn't frame it this way.
+   - Effort: trivial (pure calc).
+
+### Tier 2 — also strong
+
+4. **Suggested dictionary entries**
+   - Source: corrections with count ≥ 2 whose `original` isn't already a
+     dictionary `replaces`. Offer as add buttons.
+   - Effort: low. Complements widget 1.
+
+5. **Prompt Mode panel**
+   - Source: entries where `wasPrompt == true` (needs the new field).
+   - Show: prompts engineered vs plain dictations, top target apps.
+   - Effort: low once `wasPrompt` is stored.
+
+### Tier 3 — nice-to-have
+
+6. **When you dictate** — by-hour bar (bucket `entry.date` hour) or 14-day
+   words/day sparkline. Effort: low-medium.
+7. **Top vocabulary** — most-frequent distinctive words across history (stopword
+   filter). Could feed widget 4. Effort: medium.
+8. **Milestones/badges** — longest dictation, biggest day, 10k-word tiers.
+   Effort: low.
+
+### Open questions
+- Home is getting long — do these stack below recent activity, or does Home
+  split into "Overview" + a richer "Insights" page again?
+- Privacy: "top vocabulary" surfaces transcript content on the dashboard — fine
+  for a personal tool, worth a toggle if screens get shared.
