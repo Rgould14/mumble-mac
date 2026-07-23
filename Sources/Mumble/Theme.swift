@@ -20,7 +20,7 @@ enum Theme {
     // Headings use SF Pro (system). Goodly remains only for oversized stat numbers.
     static func display(_ size: CGFloat = 28) -> Font { .system(size: size, weight: .semibold) }
     static func heading(_ size: CGFloat = 20) -> Font { .system(size: size, weight: .semibold) }
-    static func statNumber(_ size: CGFloat = 30) -> Font { .custom("GoodlyLight", size: size) }
+    static func statNumber(_ size: CGFloat = 30) -> Font { .custom("GoodlySemibold", size: size) }
 
     /// Register bundled Goodly OTFs (process-scoped). Call once at launch.
     static func registerFonts() {

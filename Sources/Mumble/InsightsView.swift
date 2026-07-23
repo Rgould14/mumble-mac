@@ -26,7 +26,7 @@ struct InsightsContent: View {
                 InsightCard(number: state.totalWords.formatted(), label: "Words dictated")
                 InsightCard(number: "\(state.averageWPM)", label: "Average WPM")
                 InsightCard(number: "\(state.streakDays)", label: "Day streak")
-                InsightCard(number: "\(totalFixes)", label: "Fixes made", numberColor: Theme.pink)
+                InsightCard(number: "\(totalFixes)", label: "Fixes made")
             }
 
             HStack(alignment: .top, spacing: 16) {
@@ -44,7 +44,7 @@ struct InsightsContent: View {
                 Text("App usage").font(Theme.heading(20)).foregroundStyle(Theme.ink)
                 Spacer()
                 Text("APPS | \(Set(state.history.map(\.appName)).count)")
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.grey)
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.pink)
             }
             if appUsage.isEmpty {
                 Text("Dictate to see where your words go.")
@@ -91,7 +91,7 @@ struct InsightsContent: View {
                     .font(Theme.heading(20)).foregroundStyle(Theme.ink)
                 Spacer()
                 Text("LONGEST | \(state.longestStreak) DAYS")
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.grey)
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.pink)
             }
             StreakHeatmap(wordsByDay: state.wordsByDay)
             HStack(spacing: 5) {
@@ -113,14 +113,13 @@ struct InsightsContent: View {
 
 struct InsightCard: View {
     let number: String, label: String
-    var numberColor: Color = Theme.ink
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(number).font(Theme.statNumber(30)).foregroundStyle(numberColor)
+            Text(number).font(Theme.statNumber(30)).foregroundStyle(Theme.navy)
             Text(label.uppercased())
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
-                .foregroundStyle(Theme.grey)
+                .foregroundStyle(Theme.pink)
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 16)

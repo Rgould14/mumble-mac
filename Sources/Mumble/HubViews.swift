@@ -30,12 +30,18 @@ struct HubView: View {
                         .resizable().scaledToFit()
                         .frame(height: 28)
                         .padding(.horizontal, 14)
-                        .padding(.top, 40)   // clear the window title bar
-                        .padding(.bottom, 8)
+                        .padding(.top, 10)
+                        .padding(.bottom, 10)
                 }
-                List(HubSection.allCases, selection: $section) { s in
-                    Label(s.rawValue, systemImage: s.icon).tag(s)
+                ScrollView {
+                    VStack(spacing: 2) {
+                        ForEach(HubSection.allCases) { s in
+                            SidebarItem(section: s, selected: section == s) { section = s }
+                        }
+                    }
+                    .padding(.horizontal, 8)
                 }
+                Spacer(minLength: 0)
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 195)
             .toolbar(removing: .sidebarToggle)
@@ -62,6 +68,33 @@ struct HubView: View {
                 .help("Toggle sidebar")
             }
         }
+    }
+}
+
+/// Sidebar row: grey highlight when selected, icon + text in brand pink.
+struct SidebarItem: View {
+    let section: HubSection
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: section.icon)
+                    .font(.system(size: 13))
+                    .frame(width: 18)
+                Text(section.rawValue)
+                    .font(.system(size: 13, weight: selected ? .medium : .regular))
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(selected ? Theme.pink : Theme.ink)
+            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .background(RoundedRectangle(cornerRadius: 7)
+                .fill(selected ? Color.black.opacity(0.07) : .clear))
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -115,13 +148,13 @@ struct TranscriptRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(entry.text).lineLimit(3)
             HStack {
-                Text(entry.appName).font(.caption).foregroundStyle(.secondary)
-                Text(entry.date, style: .relative).font(.caption).foregroundStyle(.tertiary)
+                Text(entry.appName).font(.caption).foregroundStyle(Theme.pink)
+                Text(entry.date, style: .relative).font(.caption).foregroundStyle(Theme.pink.opacity(0.7))
                 Spacer()
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(entry.text, forType: .string)
-                } label: { Image(systemName: "doc.on.doc") }
+                } label: { Image(systemName: "doc.on.doc").foregroundStyle(Theme.pink) }
                 .buttonStyle(.borderless)
                 .help("Copy")
             }
