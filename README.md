@@ -12,27 +12,35 @@ Native macOS voice dictation with an AI polish layer — speak into any app and 
 - Continuous listening — pauses become sentence boundaries, nothing gets rewritten or lost
 - Bluetooth-friendly: captures from the built-in mic so your headphones stay in high-quality audio while music plays
 
-## Install (5 minutes)
+## Install
 
-**Downloading the release build?** Grab the zip from [Releases](https://github.com/Rgould14/mumble-mac/releases). macOS blocks the first open (the build isn't Apple-notarized): click Done, then System Settings → Privacy & Security → "Open Anyway" — or run `xattr -d com.apple.quarantine /Applications/Mumble.app`. Then continue from the permissions list below.
+**Requires an Apple Silicon Mac (M1 or newer) on macOS 14+.** Intel Macs aren't supported by the prebuilt download — build from source instead.
 
-**Building from source?** Requires **macOS 14+** and the Swift command-line tools (`xcode-select --install` — no Xcode needed).
+### Option A — download the app (easiest)
+
+1. Download **Mumble-v1.0.zip** from [Releases](https://github.com/Rgould14/mumble-mac/releases), unzip it, and drag **Mumble.app** to your Applications folder.
+2. **First open is blocked** ("Apple could not verify…") because the build isn't Apple-notarized. Click **Done** (not Move to Bin), then open **System Settings → Privacy & Security**, scroll to the bottom, and click **Open Anyway** next to Mumble → confirm.
+   - Terminal shortcut instead: `xattr -d com.apple.quarantine /Applications/Mumble.app`, then open normally.
+3. Grant these in **System Settings → Privacy & Security** (add Mumble to each): **Microphone**, **Speech Recognition**, **Accessibility**, **Input Monitoring**. Mic and Speech prompt automatically on your first dictation; Accessibility and Input Monitoring you add manually.
+4. Turn on **macOS Dictation** — System Settings → Keyboard → Dictation → **On**. Apple's speech engine requires it.
+5. Free the fn key — System Settings → Keyboard → *"Press 🌐 key to"* → **Do Nothing** so macOS doesn't intercept it.
+6. Optional: add an Anthropic API key in **Mumble Hub → Settings** for AI cleanup and Prompt Mode (see below).
+
+Then hold **fn**, speak, and release — text appears where your cursor is.
+
+### Option B — build from source
+
+Needs the Swift command-line tools (`xcode-select --install` — no full Xcode required):
 
 ```bash
 git clone https://github.com/Rgould14/mumble-mac.git
 cd mumble-mac
-./setup-signing.sh      # once per machine: creates a stable signing identity
+./setup-signing.sh      # once per machine: stable signing identity so permissions persist
 ./build-app.sh          # builds dist/Mumble.app
 open dist/Mumble.app
 ```
 
-Then grant the permissions (one time — the stable signing identity keeps them across rebuilds):
-
-1. **Microphone** and **Speech Recognition** — allow the prompts on first dictation
-2. **Accessibility** — System Settings → Privacy & Security → Accessibility → add `dist/Mumble.app`
-3. **Input Monitoring** — same pane group; needed for the global fn hotkey
-4. Turn on **macOS Dictation** (System Settings → Keyboard → Dictation) — Apple's speech engine requires it
-5. Set System Settings → Keyboard → *"Press 🌐 key to"* = **Do Nothing** so macOS doesn't intercept fn
+Building locally skips the Gatekeeper block in step 2 above; grant the same permissions (steps 3–5).
 
 ### API key (for AI cleanup + Prompt Mode)
 
