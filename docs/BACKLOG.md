@@ -80,7 +80,7 @@ Prereq for language/prompt widgets: `TranscriptEntry` currently stores
 fields (tolerant-decode, default nil/false) so new entries carry them; old
 entries degrade gracefully.
 
-### Tier 1 — recommended (distinctive + motivating)
+### Tier 1 — SHIPPED: (1) Learned this week + (3) Time saved. (2) Language split dropped (small use case).
 
 1. **What Mumble learned this week** *(top pick)*
    - Source: `corrections` filtered to lastSeen within 7 days, newest first.
