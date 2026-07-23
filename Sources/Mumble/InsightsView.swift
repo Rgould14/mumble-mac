@@ -3,7 +3,7 @@ import SwiftUI
 /// Insights tab: usage stats in the Mumble design system — Goodly Light for
 /// the oversized numbers, navy for data, Surface cards, pink nowhere (it's
 /// reserved for the live state).
-struct InsightsView: View {
+struct InsightsContent: View {
     @ObservedObject var state = AppState.shared
 
     private var totalFixes: Int {
@@ -21,25 +21,19 @@ struct InsightsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Insights").font(Theme.display(28)).foregroundStyle(Theme.ink)
-
-                HStack(spacing: 16) {
-                    InsightCard(number: "\(state.averageWPM)", label: "Words per minute")
-                    InsightCard(number: "\(totalFixes)", label: "Fixes made by Mumble")
-                    InsightCard(number: state.totalWords.formatted(), label: "Total words dictated")
-                }
-
-                HStack(alignment: .top, spacing: 16) {
-                    usageCard
-                    streakCard
-                }
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 16) {
+                InsightCard(number: state.totalWords.formatted(), label: "Words dictated")
+                InsightCard(number: "\(state.averageWPM)", label: "Average WPM")
+                InsightCard(number: "\(state.streakDays)", label: "Day streak")
+                InsightCard(number: "\(totalFixes)", label: "Fixes made", numberColor: Theme.pink)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(alignment: .top, spacing: 16) {
+                usageCard
+                streakCard
+            }
         }
-        .navigationTitle("Insights")
     }
 
     // MARK: Usage by app
@@ -119,9 +113,10 @@ struct InsightsView: View {
 
 struct InsightCard: View {
     let number: String, label: String
+    var numberColor: Color = Theme.ink
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(number).font(Theme.statNumber(30)).foregroundStyle(Theme.ink)
+            Text(number).font(Theme.statNumber(30)).foregroundStyle(numberColor)
             Text(label.uppercased())
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
@@ -175,7 +170,7 @@ struct StreakHeatmap: View {
                                            : Self.color(level: level(for: wordsByDay[day] ?? 0)))
                             .overlay(
                                 day == today
-                                    ? RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.navy, lineWidth: 1.5)
+                                    ? RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.pink, lineWidth: 1.5)
                                     : nil
                             )
                             .frame(width: 13, height: 13)

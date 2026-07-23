@@ -2,13 +2,12 @@ import SwiftUI
 import AppKit
 
 enum HubSection: String, CaseIterable, Identifiable {
-    case home = "Home", insights = "Insights", history = "History", dictionary = "Dictionary",
+    case home = "Home", history = "History", dictionary = "Dictionary",
          snippets = "Snippets", learning = "Learning", settings = "Settings"
     var id: String { rawValue }
     var icon: String {
         switch self {
         case .home: "house"
-        case .insights: "chart.bar"
         case .history: "clock.arrow.circlepath"
         case .dictionary: "character.book.closed"
         case .snippets: "text.badge.plus"
@@ -20,28 +19,29 @@ enum HubSection: String, CaseIterable, Identifiable {
 
 struct HubView: View {
     @State private var section: HubSection = .home
+    @State private var columns = NavigationSplitViewVisibility.all
     @ObservedObject var state = AppState.shared
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columns) {
             VStack(alignment: .leading, spacing: 0) {
                 if let lockup = Theme.logoHorizontal {
                     Image(nsImage: lockup)
                         .resizable().scaledToFit()
-                        .frame(height: 30)
+                        .frame(height: 28)
                         .padding(.horizontal, 14)
-                        .padding(.top, 14)
-                        .padding(.bottom, 6)
+                        .padding(.top, 40)   // clear the window title bar
+                        .padding(.bottom, 8)
                 }
                 List(HubSection.allCases, selection: $section) { s in
                     Label(s.rawValue, systemImage: s.icon).tag(s)
                 }
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 195)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             switch section {
             case .home: HomeView()
-            case .insights: InsightsView()
             case .history: HistoryView()
             case .dictionary: DictionaryView()
             case .snippets: SnippetsView()
@@ -51,6 +51,17 @@ struct HubView: View {
         }
         .frame(minWidth: 720, minHeight: 480)
         .tint(Theme.navy)
+        .toolbar {
+            // Custom toggle pinned to the same spot regardless of sidebar state.
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation { columns = columns == .all ? .detailOnly : .all }
+                } label: {
+                    Image(systemName: "sidebar.left")
+                }
+                .help("Toggle sidebar")
+            }
+        }
     }
 }
 
@@ -62,31 +73,14 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack(spacing: 14) {
-                    if let logo = Theme.logoMark {
-                        Image(nsImage: logo)
-                            .resizable().scaledToFit()
-                            .frame(width: 44, height: 44)
-                    }
-                    Text("Welcome to Mumble")
-                        .font(Theme.display(28))
-                        .foregroundStyle(Theme.ink)
-                }
-                Text("Hold **fn** and speak into any app. Release to insert polished text. Double-tap **fn** or press **fn + Space** for hands-free. **Esc** cancels.")
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 16) {
-                    StatCard(title: "Words dictated", value: "\(state.totalWords)")
-                    StatCard(title: "Average WPM", value: "\(state.averageWPM)")
-                    StatCard(title: "Day streak", value: "\(state.streakDays)")
-                }
+                InsightsContent()
 
                 Text("Recent activity").font(Theme.heading(20)).foregroundStyle(Theme.ink)
                 if state.history.isEmpty {
                     Text("No dictations yet — hold fn and say something!")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(state.history.prefix(5)) { entry in
+                    ForEach(state.history.prefix(8)) { entry in
                         TranscriptRow(entry: entry)
                     }
                 }
@@ -95,6 +89,7 @@ struct HomeView: View {
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .navigationTitle("Home")
     }
 }
 

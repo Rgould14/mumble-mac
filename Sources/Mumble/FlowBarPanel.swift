@@ -100,7 +100,7 @@ struct FlowBarView: View {
             Button { controller.stopAndInsert() } label: {
                 ZStack {
                     Circle().fill(Theme.pink)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 1.5)
                         .fill(.white)
                         .frame(width: 10, height: 10)
                 }
