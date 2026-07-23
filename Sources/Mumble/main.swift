@@ -115,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        let logo = Bundle.module.image(forResource: "MenuBarIcon")
+        let logo = Bundle.main.resourceURL.flatMap { NSImage(contentsOf: $0.appendingPathComponent("MenuBarIcon.png")) }
         // Template mode lets AppKit recolor the (black, transparent-bg) logo for light/dark
         // menu bars and the selected/highlighted state, same as a monochrome SF Symbol would.
         logo?.isTemplate = true
