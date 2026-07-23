@@ -14,7 +14,9 @@ Native macOS voice dictation with an AI polish layer — speak into any app and 
 
 ## Install (5 minutes)
 
-Requires **macOS 14+** and the Swift command-line tools (`xcode-select --install` — no Xcode needed).
+**Downloading the release build?** Grab the zip from [Releases](https://github.com/Rgould14/mumble-mac/releases). macOS blocks the first open (the build isn't Apple-notarized): click Done, then System Settings → Privacy & Security → "Open Anyway" — or run `xattr -d com.apple.quarantine /Applications/Mumble.app`. Then continue from the permissions list below.
+
+**Building from source?** Requires **macOS 14+** and the Swift command-line tools (`xcode-select --install` — no Xcode needed).
 
 ```bash
 git clone https://github.com/Rgould14/mumble-mac.git
