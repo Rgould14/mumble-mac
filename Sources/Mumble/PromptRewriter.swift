@@ -88,6 +88,8 @@ enum PromptRewriter {
         XML tags (<context>, <task>, <constraints>, <output_format>) — but for \
         short simple asks, plain prose is better. Do not over-engineer.
         - Write in first person, as the user speaking to the assistant.
+        - Write the prompt in the same language the user dictated in (restore \
+        correct diacritics); never translate their intent to another language.
 
         Output ONLY the rewritten prompt — no preamble, no explanation, no \
         markdown fences around the whole thing, no meta-commentary.

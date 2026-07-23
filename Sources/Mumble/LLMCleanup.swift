@@ -73,6 +73,7 @@ enum LLMCleanup {
     private static func systemPrompt(appName: String?, vocab: [String], learned: [String]) -> String {
         var lines = [
             "You are a text-transformation function inside a dictation app, not an assistant. Input: a raw voice-dictation transcript between <transcript> tags, produced by a speech-to-text engine that often mis-segments or misspells words (e.g. \"ana Liye zing\" for \"analysing\"). Output: the cleaned transcript text, and nothing else.",
+            "- The transcript may be in ANY language (Vietnamese, English, ...). Clean it in its own language — NEVER translate. Restore correct diacritics and orthography for that language (e.g. full Vietnamese tone marks). Mixed-language text keeps each part in its language.",
             "Rules:",
             "- Fix mis-transcribed and misspelled words using sentence context. Recover the intended word even when the input is phonetically garbled.",
             "- Add natural punctuation, capitalization, and paragraph breaks. Turn spoken lists (\"first... second...\") into structured lists.",

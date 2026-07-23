@@ -17,20 +17,10 @@ enum Theme {
     static let grey = Color(red: 0x6E/255, green: 0x6E/255, blue: 0x73/255)       // secondary text
     static let surface = Color(red: 0xF8/255, green: 0xF8/255, blue: 0xF8/255)    // wells, stat cards
 
-    // Headings use SF Pro (system). Goodly remains only for oversized stat numbers.
+    // All type is SF Pro (system); stat numbers use the rounded design.
     static func display(_ size: CGFloat = 28) -> Font { .system(size: size, weight: .semibold) }
     static func heading(_ size: CGFloat = 20) -> Font { .system(size: size, weight: .semibold) }
-    static func statNumber(_ size: CGFloat = 30) -> Font { .custom("GoodlySemibold", size: size) }
-
-    /// Register bundled Goodly OTFs (process-scoped). Call once at launch.
-    static func registerFonts() {
-        guard let dir = Bundle.main.resourceURL?.appendingPathComponent("Fonts") else { return }
-        let urls = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil))?
-            .filter { $0.pathExtension.lowercased() == "otf" } ?? []
-        for url in urls {
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-        }
-    }
+    static func statNumber(_ size: CGFloat = 30) -> Font { .system(size: size, weight: .semibold, design: .rounded) }
 
     /// The all-navy square mark used in in-app chrome.
     static var logoMark: NSImage? {

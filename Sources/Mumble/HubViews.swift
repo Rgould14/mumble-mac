@@ -349,8 +349,19 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Transcription") {
-                TextField("Locale (e.g. en_US)", text: $state.settings.localeIdentifier)
+                Picker("Language", selection: $state.settings.localeIdentifier) {
+                    ForEach(SpeechLocales.all, id: \.id) { loc in
+                        Text(loc.name).tag(loc.id)
+                    }
+                }
+                .onAppear {
+                    state.settings.localeIdentifier = SpeechLocales.normalize(state.settings.localeIdentifier)
+                }
+                Text("Vietnamese (vi-VN) and 60+ other languages are supported. AI cleanup keeps the dictation's own language and restores diacritics. Switch quickly from the menu bar → Dictation language.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("On-device recognition only", isOn: $state.settings.onDeviceOnly)
+                Text("Some languages (incl. Vietnamese) may need this OFF to use Apple's server recognition.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Always use built-in microphone", isOn: $state.settings.preferBuiltInMic)
                 Text("Recommended with Bluetooth headphones: their mic is unreliable on macOS and drops music to call quality while recording.")
                     .font(.caption).foregroundStyle(.secondary)

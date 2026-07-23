@@ -41,8 +41,9 @@ enum AppWindows {
     static func closeOnboarding() { onboarding?.orderOut(nil) }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
+    private var languageMenu: NSMenu!
 
     func applicationWillTerminate(_ notification: Notification) {
         // Put the user's input device back if we switched it to the built-in mic.
@@ -62,7 +63,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // .regular (not .accessory) gives Mumble a Dock icon and Cmd+Tab presence, so it can
         // be launched from the Dock instead of only via the menu-bar item.
         NSApp.setActivationPolicy(.regular)
-        Theme.registerFonts()
         Log.line("launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission) inputMonitoring=\(HotkeyMonitor.hasInputMonitoringPermission) mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
         if !HotkeyMonitor.hasInputMonitoringPermission {
             HotkeyMonitor.promptForInputMonitoring()
@@ -130,12 +130,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                      action: #selector(togglePrompt), keyEquivalent: "")
         menu.addItem(withTitle: "Paste last transcript (⌘⌃V)",
                      action: #selector(pasteLast), keyEquivalent: "")
+        let langItem = NSMenuItem(title: "Dictation language", action: nil, keyEquivalent: "")
+        languageMenu = NSMenu(title: "Dictation language")
+        languageMenu.delegate = self
+        langItem.submenu = languageMenu
+        menu.addItem(langItem)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Open Mumble Hub…", action: #selector(openHub), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Mumble", action: #selector(quit), keyEquivalent: "q")
         for item in menu.items { item.target = self }
         statusItem.menu = menu
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === languageMenu else { return }
+        menu.removeAllItems()
+        let current = SpeechLocales.normalize(AppState.shared.settings.localeIdentifier)
+        for id in SpeechLocales.favorites(current: current) {
+            let item = NSMenuItem(title: SpeechLocales.displayName(id),
+                                  action: #selector(selectLanguage(_:)), keyEquivalent: "")
+            item.representedObject = id
+            item.state = id == current ? .on : .off
+            item.target = self
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let more = NSMenuItem(title: "All languages…", action: #selector(openHub), keyEquivalent: "")
+        more.target = self
+        menu.addItem(more)
+    }
+
+    @objc private func selectLanguage(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        AppState.shared.settings.localeIdentifier = id
+        Log.line("dictation language -> \(id)")
     }
 
     @objc private func toggleHandsFree() { DictationController.shared.toggleHandsFree() }
