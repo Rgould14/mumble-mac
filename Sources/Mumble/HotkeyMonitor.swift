@@ -11,6 +11,9 @@ import AppKit
 final class HotkeyMonitor {
     var onPushToTalkDown: () -> Void = {}
     var onPushToTalkUp: () -> Void = {}
+    /// Push-to-talk for the configured secondary language (down/up).
+    var onSecondaryDown: () -> Void = {}
+    var onSecondaryUp: () -> Void = {}
     var onHandsFreeToggle: () -> Void = {}
     var onPromptToggle: () -> Void = {}
     var onCancel: () -> Void = {}
@@ -27,6 +30,7 @@ final class HotkeyMonitor {
     private var fnDownAt: TimeInterval = 0
     private var fnUsedAsChord = false
     private var pttActive = false
+    private var secondaryDown = false
 
     static var hasAccessibilityPermission: Bool { AXIsProcessTrusted() }
 
@@ -68,9 +72,24 @@ final class HotkeyMonitor {
 
     private func handleFlags(_ event: NSEvent) {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        if debugFlagCount < 12 {
-            debugFlagCount += 1
-            NSLog("Mumble: flagsChanged #\(debugFlagCount) flags=\(flags.rawValue) fn=\(flags.contains(.function))")
+
+        // Secondary-language push-to-talk on a dedicated right-side modifier.
+        // flagsChanged fires for the specific key by keyCode; the matching
+        // modifier flag tells us whether it went down or up.
+        if let code = settings().secondaryKey.keyCode {
+            if event.keyCode == code {
+                let mod: NSEvent.ModifierFlags = code == 54 ? .command : (code == 61 ? .option : .control)
+                let isDown = flags.contains(mod)
+                if isDown && !secondaryDown {
+                    secondaryDown = true
+                    onSecondaryDown()
+                    return
+                } else if !isDown && secondaryDown {
+                    secondaryDown = false
+                    onSecondaryUp()
+                    return
+                }
+            }
         }
 
         if settings().useFnKey {

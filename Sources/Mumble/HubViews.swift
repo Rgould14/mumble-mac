@@ -362,6 +362,18 @@ struct SettingsView: View {
                 Toggle("On-device recognition only", isOn: $state.settings.onDeviceOnly)
                 Text("Some languages (incl. Vietnamese) may need this OFF to use Apple's server recognition.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Second language (bilingual push-to-talk)") {
+                Picker("Trigger key", selection: $state.settings.secondaryKey) {
+                    ForEach(SecondaryKey.allCases) { k in Text(k.rawValue).tag(k) }
+                }
+                if state.settings.secondaryKey != .off {
+                    Picker("Second language", selection: $state.settings.secondaryLocaleIdentifier) {
+                        ForEach(SpeechLocales.all, id: \.id) { loc in Text(loc.name).tag(loc.id) }
+                    }
+                }
+                Text("Hold fn for your main language; hold the trigger key to dictate in the second one. The recording bar shows which language is live. Great for switching between, say, English and Tiếng Việt without opening Settings.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Always use built-in microphone", isOn: $state.settings.preferBuiltInMic)
                 Text("Recommended with Bluetooth headphones: their mic is unreliable on macOS and drops music to call quality while recording.")
                     .font(.caption).foregroundStyle(.secondary)

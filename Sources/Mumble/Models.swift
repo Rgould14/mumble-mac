@@ -36,6 +36,25 @@ struct Snippet: Codable, Identifiable, Equatable {
     var expansion: String
 }
 
+/// Right-side modifier key that triggers secondary-language push-to-talk.
+/// Right-side so it never collides with normal Cmd/Opt/Ctrl chording.
+enum SecondaryKey: String, Codable, CaseIterable, Identifiable {
+    case off = "Off"
+    case rightCommand = "Right ⌘"
+    case rightOption = "Right ⌥"
+    case rightControl = "Right ⌃"
+    var id: String { rawValue }
+    /// macOS virtual keycodes for the right-hand modifiers.
+    var keyCode: UInt16? {
+        switch self {
+        case .off: nil
+        case .rightCommand: 54
+        case .rightOption: 61
+        case .rightControl: 62
+        }
+    }
+}
+
 enum ActivationGesture: String, Codable, CaseIterable {
     case hold = "Hold to talk"
     case doubleTap = "Double-tap to toggle"
@@ -80,6 +99,12 @@ struct AppSettings: Codable, Equatable {
 
     /// Prompt Mode: fallback target when it can't be inferred from the app.
     var promptDefaultTarget = "General LLM prompt"
+
+    /// Secondary dictation language + the key that push-to-talks in it, so a
+    /// bilingual user can hold fn for their primary language and this key for
+    /// the other, without touching Settings between utterances.
+    var secondaryLocaleIdentifier = "vi-VN"
+    var secondaryKey = SecondaryKey.off
 }
 
 // Tolerant decoding: new fields fall back to their defaults instead of failing
@@ -105,5 +130,7 @@ extension AppSettings {
         enableLearning = try c.decodeIfPresent(Bool.self, forKey: .enableLearning) ?? d.enableLearning
         totalFixesApplied = try c.decodeIfPresent(Int.self, forKey: .totalFixesApplied) ?? d.totalFixesApplied
         promptDefaultTarget = try c.decodeIfPresent(String.self, forKey: .promptDefaultTarget) ?? d.promptDefaultTarget
+        secondaryLocaleIdentifier = try c.decodeIfPresent(String.self, forKey: .secondaryLocaleIdentifier) ?? d.secondaryLocaleIdentifier
+        secondaryKey = try c.decodeIfPresent(SecondaryKey.self, forKey: .secondaryKey) ?? d.secondaryKey
     }
 }

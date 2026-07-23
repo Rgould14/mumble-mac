@@ -96,6 +96,15 @@ struct FlowBarView: View {
     /// Recording pill: HUD Ink, waveform + 40px pink stop control.
     private var recordingPill: some View {
         HStack(spacing: 12) {
+            if AppState.shared.settings.secondaryKey != .off, !controller.activeLocale.isEmpty {
+                Text(languageCode(controller.activeLocale))
+                    .font(.system(size: 10, weight: .bold))
+                    .kerning(0.5)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(.white.opacity(0.18)))
+            }
             if controller.promptMode {
                 Text("PROMPT")
                     .font(.system(size: 10, weight: .bold))
@@ -137,6 +146,10 @@ struct FlowBarView: View {
 }
 
 /// 14px ring spinner: white arc on 25% white track, 0.8s linear rotation.
+private func languageCode(_ id: String) -> String {
+    String(id.split(separator: "-").first ?? "").uppercased()
+}
+
 struct HUDSpinner: View {
     @State private var spinning = false
     var body: some View {

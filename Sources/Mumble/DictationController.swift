@@ -14,6 +14,9 @@ final class DictationController: ObservableObject {
     @Published var state: DictationState = .idle
     /// True while the current session is a Prompt Mode dictation.
     @Published var promptMode = false
+    /// Locale used for the current session (shown on the HUD).
+    @Published var activeLocale = ""
+    private var localeOverride: String?
     /// Short outcome message shown in the Flow Bar after a session (e.g. copied).
     @Published var notice: String?
     let transcriber = SpeechTranscriber()
@@ -33,6 +36,8 @@ final class DictationController: ObservableObject {
         hotkeys.onPushToTalkUp = { [weak self] in self?.pushToTalkUp() }
         hotkeys.onHandsFreeToggle = { [weak self] in self?.toggleHandsFree() }
         hotkeys.onPromptToggle = { [weak self] in self?.togglePromptMode() }
+        hotkeys.onSecondaryDown = { [weak self] in self?.secondaryDown() }
+        hotkeys.onSecondaryUp = { [weak self] in self?.secondaryUp() }
         hotkeys.onCancel = { [weak self] in self?.cancel() }
         hotkeys.onPasteLast = { pasteLastTranscript() }
     }
@@ -49,6 +54,19 @@ final class DictationController: ObservableObject {
         case .idle:
             start(handsFree: false)
         default: break
+        }
+    }
+
+    private func secondaryDown() {
+        guard case .idle = state else { return }
+        localeOverride = AppState.shared.settings.secondaryLocaleIdentifier
+        start(handsFree: false)
+    }
+
+    private func secondaryUp() {
+        if case .recording(handsFree: false) = state {
+            let held = Date().timeIntervalSince(startedAt)
+            if held < 0.25 { cancel() } else { stopAndInsert() }
         }
     }
 
@@ -95,13 +113,15 @@ final class DictationController: ObservableObject {
         guard case .idle = state else { return }
         promptMode = prompt
         let settings = AppState.shared.settings
+        let locale = localeOverride ?? settings.localeIdentifier
+        activeLocale = locale
         targetApp = NSWorkspace.shared.frontmostApplication
         // Decide the destination now, while the user's click focus is intact.
         focusTarget = FocusDetector.classifyFocus()
         Log.line("target app=\(targetApp?.localizedName ?? "?") focus=\(focusTarget)")
         notice = nil
         do {
-            try transcriber.start(locale: Locale(identifier: settings.localeIdentifier),
+            try transcriber.start(locale: Locale(identifier: locale),
                                   onDeviceOnly: settings.onDeviceOnly)
         } catch {
             Log.line("start FAILED: \(error.localizedDescription)")
@@ -174,6 +194,7 @@ final class DictationController: ObservableObject {
             state: AppState.shared)
 
         state = .idle
+        localeOverride = nil
         guard !final.isEmpty else {
             FlowBarPanel.shared.hideSoon()
             return
@@ -218,6 +239,7 @@ final class DictationController: ObservableObject {
         guard isDictating else { return }
         sessionTimer?.invalidate()
         transcriber.cancel()
+        localeOverride = nil
         state = .idle
         if AppState.shared.settings.playSounds { Sounds.play("Bottle") }
         FlowBarPanel.shared.hideSoon()
