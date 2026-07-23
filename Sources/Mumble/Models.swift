@@ -77,6 +77,9 @@ struct AppSettings: Codable, Equatable {
     /// Running count of automatic fixes applied to dictations (dictionary
     /// replacements + learned corrections) — surfaced in Insights.
     var totalFixesApplied = 0
+
+    /// Prompt Mode: fallback target when it can't be inferred from the app.
+    var promptDefaultTarget = "General LLM prompt"
 }
 
 // Tolerant decoding: new fields fall back to their defaults instead of failing
@@ -101,5 +104,6 @@ extension AppSettings {
         preferBuiltInMic = try c.decodeIfPresent(Bool.self, forKey: .preferBuiltInMic) ?? d.preferBuiltInMic
         enableLearning = try c.decodeIfPresent(Bool.self, forKey: .enableLearning) ?? d.enableLearning
         totalFixesApplied = try c.decodeIfPresent(Int.self, forKey: .totalFixesApplied) ?? d.totalFixesApplied
+        promptDefaultTarget = try c.decodeIfPresent(String.self, forKey: .promptDefaultTarget) ?? d.promptDefaultTarget
     }
 }

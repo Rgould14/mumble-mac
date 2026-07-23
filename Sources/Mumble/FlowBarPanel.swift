@@ -96,6 +96,15 @@ struct FlowBarView: View {
     /// Recording pill: HUD Ink, waveform + 40px pink stop control.
     private var recordingPill: some View {
         HStack(spacing: 12) {
+            if controller.promptMode {
+                Text("PROMPT")
+                    .font(.system(size: 10, weight: .bold))
+                    .kerning(0.5)
+                    .foregroundStyle(Theme.pinkTintText)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Theme.pinkTint))
+            }
             WaveformView(history: transcriber.levelHistory)
             Button { controller.stopAndInsert() } label: {
                 ZStack {

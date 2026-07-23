@@ -12,6 +12,8 @@ final class DictationController: ObservableObject {
     static let shared = DictationController()
 
     @Published var state: DictationState = .idle
+    /// True while the current session is a Prompt Mode dictation.
+    @Published var promptMode = false
     /// Short outcome message shown in the Flow Bar after a session (e.g. copied).
     @Published var notice: String?
     let transcriber = SpeechTranscriber()
@@ -30,6 +32,7 @@ final class DictationController: ObservableObject {
         hotkeys.onPushToTalkDown = { [weak self] in self?.pushToTalkDown() }
         hotkeys.onPushToTalkUp = { [weak self] in self?.pushToTalkUp() }
         hotkeys.onHandsFreeToggle = { [weak self] in self?.toggleHandsFree() }
+        hotkeys.onPromptToggle = { [weak self] in self?.togglePromptMode() }
         hotkeys.onCancel = { [weak self] in self?.cancel() }
         hotkeys.onPasteLast = { pasteLastTranscript() }
     }
@@ -65,10 +68,21 @@ final class DictationController: ObservableObject {
         }
     }
 
+    /// fn+P: dictate a rambled intent; Mumble rewrites it into an engineered
+    /// prompt for the inferred target before inserting.
+    func togglePromptMode() {
+        switch state {
+        case .idle: start(handsFree: true, prompt: true)
+        case .recording: stopAndInsert()
+        default: break
+        }
+    }
+
     // MARK: Session
 
-    func start(handsFree: Bool) {
+    func start(handsFree: Bool, prompt: Bool = false) {
         guard case .idle = state else { return }
+        promptMode = prompt
         let settings = AppState.shared.settings
         targetApp = NSWorkspace.shared.frontmostApplication
         // Decide the destination now, while the user's click focus is intact.
@@ -122,10 +136,25 @@ final class DictationController: ObservableObject {
     /// transcript, and pastes it into the target app.
     private func finish(raw: String, appName: String, duration: Double) async {
         let text: String
-        do {
-            text = try await LLMCleanup.clean(raw, appName: appName, state: AppState.shared)
-        } catch {
-            text = TextPolisher.polish(raw, state: AppState.shared)
+        if promptMode {
+            let target = PromptTarget.infer(
+                appName: appName,
+                fallback: PromptTarget(rawValue: AppState.shared.settings.promptDefaultTarget) ?? .general)
+            Log.line("prompt mode: target=\(target.rawValue)")
+            do {
+                text = try await PromptRewriter.rewrite(raw, target: target, state: AppState.shared)
+            } catch {
+                // No key/offline: fall back to normal cleanup so nothing is lost.
+                text = (try? await LLMCleanup.clean(raw, appName: appName, state: AppState.shared))
+                    ?? TextPolisher.polish(raw, state: AppState.shared)
+            }
+            promptMode = false
+        } else {
+            do {
+                text = try await LLMCleanup.clean(raw, appName: appName, state: AppState.shared)
+            } catch {
+                text = TextPolisher.polish(raw, state: AppState.shared)
+            }
         }
         // Snippet expansion + dictionary + learned corrections apply locally on
         // top of the LLM output.

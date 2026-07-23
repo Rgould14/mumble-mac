@@ -126,6 +126,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "Start hands-free dictation (fn + Space)",
                      action: #selector(toggleHandsFree), keyEquivalent: "")
+        menu.addItem(withTitle: "Start prompt dictation (fn + P)",
+                     action: #selector(togglePrompt), keyEquivalent: "")
         menu.addItem(withTitle: "Paste last transcript (⌘⌃V)",
                      action: #selector(pasteLast), keyEquivalent: "")
         menu.addItem(.separator())
@@ -137,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleHandsFree() { DictationController.shared.toggleHandsFree() }
+    @objc private func togglePrompt() { DictationController.shared.togglePromptMode() }
     @objc private func pasteLast() { pasteLastTranscript() }
     @objc private func openHub() { AppWindows.showHub() }
     @objc private func quit() { NSApp.terminate(nil) }

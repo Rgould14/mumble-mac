@@ -12,6 +12,7 @@ final class HotkeyMonitor {
     var onPushToTalkDown: () -> Void = {}
     var onPushToTalkUp: () -> Void = {}
     var onHandsFreeToggle: () -> Void = {}
+    var onPromptToggle: () -> Void = {}
     var onCancel: () -> Void = {}
     var onPasteLast: () -> Void = {}
 
@@ -130,6 +131,13 @@ final class HotkeyMonitor {
             fnUsedAsChord = true
             pttActive = false
             onHandsFreeToggle()
+            return
+        }
+        // fn + P -> Prompt Mode toggle.
+        if event.keyCode == 35, flags.contains(.function) {
+            fnUsedAsChord = true
+            pttActive = false
+            onPromptToggle()
             return
         }
         // Any key while fn held means fn was a chord, not push-to-talk.

@@ -1,6 +1,6 @@
 # Mumble backlog
 
-## Prompt Mode (planned — not started)
+## Prompt Mode (v1 SHIPPED — remaining items below)
 
 **Goal:** a dedicated mode for dictating *prompts* rather than prose. You ramble
 your intent; Mumble asks (or infers) which coding agent/tool the prompt is for,
@@ -44,7 +44,23 @@ rewritten prompt become corrections scoped to Prompt Mode.
 - Do we show a diff/preview before inserting, or insert immediately like
   normal dictation (bias: insert immediately — same philosophy as dictation)?
 
-### Rough build order
+### Shipped in v1
+- fn+P toggle (+ menu bar item), PROMPT chip on the recording HUD
+- Target inference from frontmost app (terminal→Claude Code, IDE→inline,
+  browser/chat→chat assistant) with a Settings fallback picker
+- PromptRewriter grounded in Anthropic's prompt-engineering best practices
+  (clarity/specificity, kept motivation, XML structure for long prompts,
+  verbatim detail preservation, target-specific rules incl. agentic full-spec
+  + verification criteria)
+- Fallback to normal cleanup when offline/no key
+
+### Remaining (v2)
+- HUD keyboard-driven target chooser when inference is ambiguous
+- Remember last target per app
+- Store raw + rewritten pair in history; Learning integration for prompt edits
+- Optional separate (faster) model for rewriting
+
+### Original build order (reference)
 
 1. `PromptMode` state on `DictationController` + activation shortcut + HUD label
 2. Target registry (name → rewrite template) with per-app inference + memory
