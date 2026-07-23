@@ -105,15 +105,21 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 InsightsContent()
 
+                HStack(alignment: .top, spacing: 16) {
+                    TimeSavedCard()
+                    LearnedThisWeekCard()
+                }
+
                 Text("Recent activity").font(Theme.heading(20)).foregroundStyle(Theme.ink)
+                    .padding(.top, 8)
                 if state.history.isEmpty {
                     Text("No dictations yet — hold fn and say something!")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(state.history.prefix(8)) { entry in
+                    ForEach(state.history.prefix(5)) { entry in
                         TranscriptRow(entry: entry)
                     }
                 }

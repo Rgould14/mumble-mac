@@ -90,6 +90,22 @@ final class AppState: ObservableObject {
         return out
     }
 
+    /// Corrections Mumble learned in the last 7 days, newest first.
+    var correctionsThisWeek: [Correction] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        return corrections.filter { $0.lastSeen >= cutoff }
+            .sorted { $0.lastSeen > $1.lastSeen }
+    }
+
+    /// Estimated minutes to type vs speak the same words, and the difference.
+    /// Typing ~40 wpm, speaking ~150 wpm are conventional averages.
+    var timeSaved: (savedMin: Double, typingMin: Double, speakingMin: Double) {
+        let words = Double(totalWords)
+        let typing = words / 40.0
+        let speaking = words / 150.0
+        return (typing - speaking, typing, speaking)
+    }
+
     var streakDays: Int {
         let days = Set(history.map { Calendar.current.startOfDay(for: $0.date) })
         var streak = 0
