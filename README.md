@@ -18,7 +18,7 @@ Native macOS voice dictation with an AI polish layer — speak into any app and 
 
 ### Option A — download the app (easiest)
 
-1. Download **Mumble-v1.0.zip** from [Releases](https://github.com/Rgould14/mumble-mac/releases), unzip it, and drag **Mumble.app** to your Applications folder.
+1. Download **Mumble-v1.1.zip** from [Releases](https://github.com/Rgould14/mumble-mac/releases), unzip it, and drag **Mumble.app** to your Applications folder.
 2. **First open is blocked** ("Apple could not verify…") because the build isn't Apple-notarized. Click **Done** (not Move to Bin), then open **System Settings → Privacy & Security**, scroll to the bottom, and click **Open Anyway** next to Mumble → confirm.
    - Terminal shortcut instead: `xattr -d com.apple.quarantine /Applications/Mumble.app`, then open normally.
 3. Grant these in **System Settings → Privacy & Security** (add Mumble to each): **Microphone**, **Speech Recognition**, **Accessibility**, **Input Monitoring**. Mic and Speech prompt automatically on your first dictation; Accessibility and Input Monitoring you add manually.
