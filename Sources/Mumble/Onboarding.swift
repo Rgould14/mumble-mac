@@ -4,7 +4,7 @@ import Speech
 import AppKit
 
 /// Permission checklist shown on first launch and in Settings, mirroring
-/// Wispr Flow's setup flow (microphone + speech + accessibility).
+/// setup flow (microphone + speech + accessibility).
 struct PermissionsStatusView: View {
     @State private var mic = AVCaptureDevice.authorizationStatus(for: .audio)
     @State private var speech = SFSpeechRecognizer.authorizationStatus()

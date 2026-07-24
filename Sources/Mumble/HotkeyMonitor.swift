@@ -1,6 +1,6 @@
 import AppKit
 
-/// Global keyboard monitor replicating Wispr Flow's activation gestures:
+/// Global keyboard monitor for the activation gestures:
 ///  - Hold fn            -> push-to-talk (release to finish)
 ///  - Double-tap fn      -> hands-free toggle on; single fn tap stops
 ///  - fn + Space         -> hands-free toggle
@@ -125,7 +125,7 @@ final class HotkeyMonitor {
                 }
             }
         } else {
-            // Ctrl+Option push-to-talk (Wispr's non-Apple-keyboard default).
+            // Ctrl+Option push-to-talk (non-Apple-keyboard fallback).
             let down = flags.contains(.control) && flags.contains(.option) && !flags.contains(.command)
             if down && !ctrlOptDown {
                 ctrlOptDown = true

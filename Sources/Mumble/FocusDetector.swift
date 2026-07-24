@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 
 /// Decides whether dictation should paste into the focused element or fall
-/// back to the clipboard. Philosophy (matching Wispr Flow): DEFAULT TO
+/// back to the clipboard. Philosophy: DEFAULT TO
 /// INSERTING — only use the clipboard when focus is clearly not editable.
 /// Electron/Chromium apps (Claude, Slack, VS Code, Discord…) don't expose
 /// their text fields via AX until poked with AXManualAccessibility, so an

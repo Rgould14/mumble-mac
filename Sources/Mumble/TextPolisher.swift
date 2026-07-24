@@ -1,6 +1,6 @@
 import Foundation
 
-/// Rule-based cleanup approximating Wispr Flow's "auto-edits": strips filler
+/// Rule-based cleanup ("auto-edits"): strips filler
 /// words, fixes capitalization/spacing, applies the personal dictionary,
 /// and expands snippets.
 enum TextPolisher {

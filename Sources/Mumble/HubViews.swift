@@ -188,6 +188,7 @@ struct TranscriptRow: View {
 struct HistoryView: View {
     @ObservedObject var state = AppState.shared
     @State private var search = ""
+    @State private var confirmClear = false
 
     var filtered: [TranscriptEntry] {
         search.isEmpty ? state.history
@@ -210,9 +211,16 @@ struct HistoryView: View {
         }
         .searchable(text: $search, prompt: "Search transcripts")
         .toolbar {
-            Button(role: .destructive) { state.history = [] } label: {
+            Button(role: .destructive) { confirmClear = true } label: {
                 Label("Clear all", systemImage: "trash")
             }
+        }
+        .confirmationDialog("Are you sure you want to delete all of these records?",
+                            isPresented: $confirmClear, titleVisibility: .visible) {
+            Button("Delete all transcriptions", role: .destructive) { state.history = [] }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This permanently removes your entire transcription history. It can't be undone.")
         }
         .navigationTitle("History")
     }
@@ -227,7 +235,7 @@ struct DictionaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Teach Flow your names and jargon. Optionally map a commonly misheard phrase to the correct word.")
+            Text("Teach Mumble your names and jargon. Optionally map a commonly misheard phrase to the correct word.")
                 .foregroundStyle(.secondary)
             HStack {
                 TextField("Word (e.g. Skedulo)", text: $newWord)
@@ -268,7 +276,7 @@ struct SnippetsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Say a trigger phrase on its own and Flow inserts the full snippet — great for meeting links and canned replies.")
+            Text("Say a trigger phrase on its own and Mumble inserts the full snippet — great for meeting links and canned replies.")
                 .foregroundStyle(.secondary)
             HStack(alignment: .top) {
                 VStack {
@@ -400,7 +408,7 @@ struct SettingsView: View {
             }
             Section("AI cleanup") {
                 Toggle("Use AI to clean up transcripts", isOn: $state.settings.useAICleanup)
-                Text("Rewrites raw speech-to-text to fix mis-transcribed words, punctuation, and tone — the way Wispr Flow does. Falls back to rule-based polishing when off or offline.")
+                Text("Rewrites raw speech-to-text to fix mis-transcribed words, punctuation, and tone. Falls back to rule-based polishing when off or offline.")
                     .font(.caption).foregroundStyle(.secondary)
                 if state.settings.useAICleanup {
                     SecureField("Anthropic API key (or set ANTHROPIC_API_KEY)",

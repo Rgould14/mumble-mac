@@ -61,8 +61,8 @@ enum ActivationGesture: String, Codable, CaseIterable {
 }
 
 struct AppSettings: Codable, Equatable {
-    /// Push-to-talk key: fn (default, like Wispr Flow on Apple keyboards)
-    /// or ctrl+option (Wispr's fallback for non-Apple keyboards).
+    /// Push-to-talk key: fn (default, Apple keyboards) or ctrl+option
+    /// (fallback for non-Apple keyboards).
     var useFnKey = true
     var gesture: ActivationGesture = .hold
     var playSounds = true
@@ -73,7 +73,7 @@ struct AppSettings: Codable, Equatable {
     var maxSessionMinutes = 20
     var hasCompletedOnboarding = false
 
-    /// Stage-2 LLM cleanup (the Wispr Flow "auto-edits" layer): rewrites the raw
+    /// Stage-2 LLM cleanup ("auto-edits" layer): rewrites the raw
     /// transcript to fix mis-transcribed words, punctuation, and tone-per-app.
     /// Falls back to rule-based polishing when off, offline, or no key.
     var useAICleanup = true
