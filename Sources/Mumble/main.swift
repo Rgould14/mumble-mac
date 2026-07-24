@@ -63,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // .regular (not .accessory) gives Mumble a Dock icon and Cmd+Tab presence, so it can
         // be launched from the Dock instead of only via the menu-bar item.
         NSApp.setActivationPolicy(.regular)
+        Appearance.apply(AppState.shared.settings.appearance)
         Log.line("launch — accessibility=\(HotkeyMonitor.hasAccessibilityPermission) inputMonitoring=\(HotkeyMonitor.hasInputMonitoringPermission) mic=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) speech=\(SFSpeechRecognizer.authorizationStatus().rawValue)")
         if !HotkeyMonitor.hasInputMonitoringPermission {
             HotkeyMonitor.promptForInputMonitoring()

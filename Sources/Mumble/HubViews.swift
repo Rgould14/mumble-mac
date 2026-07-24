@@ -27,7 +27,9 @@ struct HubView: View {
             VStack(alignment: .leading, spacing: 0) {
                 if let lockup = Theme.logoHorizontal {
                     Image(nsImage: lockup)
+                        .renderingMode(.template)   // single-navy art → tint per appearance
                         .resizable().scaledToFit()
+                        .foregroundStyle(Theme.figure)
                         .frame(height: 28)
                         .padding(.horizontal, 14)
                         .padding(.top, 10)
@@ -67,6 +69,16 @@ struct HubView: View {
                 }
                 .help("Toggle sidebar")
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let dark = state.settings.appearance.isDarkNow
+                    state.settings.appearance = dark ? .light : .dark
+                    Appearance.apply(state.settings.appearance)
+                } label: {
+                    Image(systemName: state.settings.appearance.isDarkNow ? "sun.max.fill" : "moon.fill")
+                }
+                .help(state.settings.appearance.isDarkNow ? "Switch to day" : "Switch to night")
+            }
         }
     }
 }
@@ -91,7 +103,7 @@ struct SidebarItem: View {
             .padding(.vertical, 7)
             .padding(.horizontal, 10)
             .background(RoundedRectangle(cornerRadius: 7)
-                .fill(selected ? Color.black.opacity(0.07) : .clear))
+                .fill(selected ? Theme.sidebarSelected : .clear))
             .contentShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
@@ -407,6 +419,14 @@ struct SettingsView: View {
             }
             Section("Feedback") {
                 Toggle("Play sounds", isOn: $state.settings.playSounds)
+            }
+            Section("Appearance") {
+                Picker("Theme", selection: $state.settings.appearance) {
+                    Text("System").tag(Appearance.system)
+                    Text("Day").tag(Appearance.light)
+                    Text("Night").tag(Appearance.dark)
+                }
+                .onChange(of: state.settings.appearance) { _, new in Appearance.apply(new) }
             }
             Section("Permissions") {
                 PermissionsStatusView()

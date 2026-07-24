@@ -115,7 +115,7 @@ struct InsightCard: View {
     let number: String, label: String
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(number).font(Theme.statNumber(30)).foregroundStyle(Theme.navy)
+            Text(number).font(Theme.statNumber(30)).foregroundStyle(Theme.figure)
             Text(label.uppercased())
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
@@ -139,7 +139,7 @@ struct StreakHeatmap: View {
         case 3: Theme.navy
         case 2: Color(red: 0x4A/255, green: 0x6D/255, blue: 0xA8/255)
         case 1: Color(red: 0xC4/255, green: 0xD3/255, blue: 0xEA/255)
-        default: Color.black.opacity(0.05)
+        default: Theme.navyWash.opacity(0.5)
         }
     }
 

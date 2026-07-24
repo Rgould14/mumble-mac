@@ -105,6 +105,9 @@ struct AppSettings: Codable, Equatable {
     /// the other, without touching Settings between utterances.
     var secondaryLocaleIdentifier = "vi-VN"
     var secondaryKey = SecondaryKey.off
+
+    /// Light/dark appearance. Defaults to following the system.
+    var appearance = Appearance.system
 }
 
 // Tolerant decoding: new fields fall back to their defaults instead of failing
@@ -132,5 +135,6 @@ extension AppSettings {
         promptDefaultTarget = try c.decodeIfPresent(String.self, forKey: .promptDefaultTarget) ?? d.promptDefaultTarget
         secondaryLocaleIdentifier = try c.decodeIfPresent(String.self, forKey: .secondaryLocaleIdentifier) ?? d.secondaryLocaleIdentifier
         secondaryKey = try c.decodeIfPresent(SecondaryKey.self, forKey: .secondaryKey) ?? d.secondaryKey
+        appearance = try c.decodeIfPresent(Appearance.self, forKey: .appearance) ?? d.appearance
     }
 }

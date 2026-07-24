@@ -31,7 +31,7 @@ struct TimeSavedCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(savedHeadline)
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(Theme.navy)
+                    .foregroundStyle(Theme.figure)
                 Text("vs typing")
                     .font(.system(size: 13)).foregroundStyle(Theme.grey)
             }
@@ -132,7 +132,7 @@ struct LearnedThisWeekCard: View {
                             .font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.pink)
                         Text(c.corrected)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Theme.navy).lineLimit(1)
+                            .foregroundStyle(Theme.figure).lineLimit(1)
                         Spacer(minLength: 8)
                         if isInDictionary(c) {
                             Label("Saved", systemImage: "checkmark")
@@ -142,11 +142,11 @@ struct LearnedThisWeekCard: View {
                             Button { addToDictionary(c) } label: {
                                 Text("Add to dictionary").font(.system(size: 11, weight: .medium))
                             }
-                            .buttonStyle(.plain).foregroundStyle(Theme.navy)
+                            .buttonStyle(.plain).foregroundStyle(Theme.link)
                         }
                     }
                     .padding(.vertical, 7).padding(.horizontal, 10)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Theme.rowSurface))
                 }
                 if recent.count > 5 {
                     Text("and \(recent.count - 5) more")
