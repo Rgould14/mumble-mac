@@ -1,6 +1,6 @@
 # Mumble
 
-Native macOS voice dictation with an AI polish layer — speak into any app and polished text lands wherever your cursor is. Inspired by Wispr Flow, built in Swift/SwiftUI with no Xcode project required.
+Native macOS voice dictation with an AI polish layer — speak into any app and polished text lands wherever your cursor is. Built in Swift/SwiftUI with no Xcode project required.
 
 **Highlights**
 

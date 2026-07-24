@@ -70,7 +70,7 @@ rewritten prompt become corrections scoped to Prompt Mode.
 
 ## Home dashboard — additional widgets (planned, not started)
 
-Goal: differentiate the Home screen from Wispr Flow by surfacing what's uniquely
+Goal: give the Home screen a distinctive identity by surfacing what's uniquely
 Mumble (learning loop, bilingual use, Prompt Mode, content) below the existing
 stat cards + app-usage + streak. All buildable from existing local data
 (`history.json`, `corrections.json`, `settings.json`) — no new tracking.
@@ -86,7 +86,7 @@ entries degrade gracefully.
    - Source: `corrections` filtered to lastSeen within 7 days, newest first.
    - Layout: Surface card, list of `original → corrected` rows with count; each
      row an "Add to dictionary" button (writes a DictionaryWord).
-   - Why: exposes the learning flywheel Wispr hides; turns passive data into action.
+   - Why: exposes the learning flywheel; turns passive data into action.
    - Effort: low. No model changes.
 
 2. **Language split**
@@ -101,7 +101,7 @@ entries degrade gracefully.
    - Source: totalWords. Estimate = words/40wpm (typing) − words/150wpm (speaking),
      shown as "≈ X hours saved vs typing".
    - Layout: one stat tile or a slim banner; pink accent on the number.
-   - Why: concrete, satisfying, motivational; Wispr doesn't frame it this way.
+   - Why: concrete, satisfying, motivational.
    - Effort: trivial (pure calc).
 
 ### Tier 2 — also strong
